@@ -1,11 +1,11 @@
-use tauri::{Manager, WebviewUrl, WindowEvent};
+use tauri::Manager;
+#[cfg(feature = "navigator")]
+use tauri::{WebviewUrl, WindowEvent};
 
-/// Split ratio for the navigator dual-pane layout.
-/// Left pane (chat) gets this fraction, right pane gets the rest.
+#[cfg(feature = "navigator")]
 const NAVIGATOR_SPLIT: f64 = 0.55;
 
-/// Opens or focuses the navigator dual-pane window.
-/// Left pane: Open WebUI chat. Right pane: Research view placeholder.
+#[cfg(feature = "navigator")]
 #[tauri::command]
 async fn open_navigator(app: tauri::AppHandle) -> Result<(), String> {
     // If the navigator window already exists, just focus it
@@ -80,8 +80,12 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_global_shortcut::Builder::default().build())
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![open_navigator]);
+        .plugin(tauri_plugin_opener::init());
+
+    #[cfg(feature = "navigator")]
+    {
+        builder = builder.invoke_handler(tauri::generate_handler![open_navigator]);
+    }
 
     #[cfg(target_os = "macos")]
     {
