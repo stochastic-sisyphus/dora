@@ -7,6 +7,7 @@ export const APP_STORE_FILE = 'stores.json';
 // window labels
 export const MAIN_WINDOW_LABEL = 'main';
 export const CHATBAR_WINDOW_LABEL = 'chatbar';
+export const NAVIGATOR_WINDOW_LABEL = 'navigator';
 
 // window sizes
 export const MAIN_WINDOW_SIZE = new LogicalSize(800, 650);

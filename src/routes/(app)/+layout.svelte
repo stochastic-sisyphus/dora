@@ -12,7 +12,7 @@
 	import { getTools } from '$lib/apis/tools';
 	import { getUserSettings } from '$lib/apis/users';
 
-	import { WEBUI_VERSION } from '$lib/constants';
+	import { IS_TAURI, WEBUI_VERSION } from '$lib/constants';
 	import { compareVersion } from '$lib/utils';
 
 	import {
@@ -167,6 +167,15 @@
 					setTimeout(() => {
 						newChatButton?.click();
 					}, 0);
+				}
+
+				// Check if Ctrl/Cmd + Shift + N is pressed (open navigator)
+				if (isCtrlPressed && isShiftPressed && event.key.toLowerCase() === 'n') {
+					event.preventDefault();
+					if (IS_TAURI) {
+						const { openNavigator } = await import('$lib/app/commands/open-navigator');
+						await openNavigator();
+					}
 				}
 			});
 

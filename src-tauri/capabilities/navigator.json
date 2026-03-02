@@ -1,0 +1,7 @@
+{
+	"$schema": "../gen/schemas/desktop-schema.json",
+	"identifier": "navigator",
+	"description": "Capability for the navigator dual-pane webviews",
+	"windows": ["navigator-chat", "navigator-research"],
+	"permissions": ["core:default", "opener:default"]
+}
