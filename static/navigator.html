@@ -17,13 +17,83 @@
       overflow: hidden;
     }
 
-    .toolbar {
+    .top-bar {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 8px;
+      gap: 4px;
+      padding: 4px 8px;
       background: #2c2620;
       border-bottom: 1px solid #433b32;
+      flex-shrink: 0;
+    }
+
+    .top-bar .shortcuts {
+      display: flex;
+      gap: 3px;
+      overflow-x: auto;
+      flex: 1;
+    }
+
+    .shortcut {
+      background: #16130f;
+      border: 1px solid #433b32;
+      border-radius: 3px;
+      padding: 2px 7px;
+      color: #8a8075;
+      font-size: 0.65rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .shortcut:hover { border-color: #69AAB2; color: #69AAB2; }
+
+    .split-btn {
+      background: #433b32;
+      border: none;
+      border-radius: 3px;
+      padding: 2px 7px;
+      color: #8a8075;
+      font-size: 0.65rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .split-btn:hover { background: #5a5047; }
+    .split-btn.active { background: #69AAB2; color: #16130f; }
+
+    .panes {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .pane {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panes.single .pane:first-child { flex: 1; }
+    .panes.single .pane:last-child { display: none; }
+    .panes.split .pane { flex: 1; }
+    .panes.split .pane:first-child { border-bottom: 2px solid #433b32; }
+
+    .pane-bar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 6px;
+      background: #1e1b17;
+      border-bottom: 1px solid #433b32;
+      flex-shrink: 0;
+    }
+
+    .pane-label {
+      font-size: 0.6rem;
+      color: #5a5047;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       flex-shrink: 0;
     }
 
@@ -31,60 +101,31 @@
       flex: 1;
       background: #16130f;
       border: 1px solid #433b32;
-      border-radius: 4px;
-      padding: 5px 10px;
-      color: #beb6ae;
-      font-size: 0.8rem;
-      font-family: inherit;
-      outline: none;
-    }
-
-    .url-input:focus {
-      border-color: #69AAB2;
-    }
-
-    .url-input::placeholder {
-      color: #5a5047;
-    }
-
-    .btn {
-      background: #433b32;
-      border: none;
-      border-radius: 4px;
-      padding: 5px 10px;
-      color: #a39a90;
-      font-size: 0.75rem;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .btn:hover { background: #5a5047; }
-    .btn.active { background: #69AAB2; color: #16130f; }
-
-    .shortcuts {
-      display: flex;
-      gap: 4px;
-      padding: 4px 8px;
-      background: #2c2620;
-      border-bottom: 1px solid #433b32;
-      flex-shrink: 0;
-      overflow-x: auto;
-    }
-
-    .shortcut {
-      background: #16130f;
-      border: 1px solid #433b32;
       border-radius: 3px;
       padding: 3px 8px;
-      color: #8a8075;
-      font-size: 0.7rem;
-      cursor: pointer;
-      white-space: nowrap;
+      color: #beb6ae;
+      font-size: 0.75rem;
+      font-family: inherit;
+      outline: none;
+      min-width: 0;
     }
 
-    .shortcut:hover { border-color: #69AAB2; color: #69AAB2; }
+    .url-input:focus { border-color: #69AAB2; }
+    .url-input::placeholder { color: #5a5047; }
 
-    .frame-container {
+    .go-btn {
+      background: #433b32;
+      border: none;
+      border-radius: 3px;
+      padding: 3px 8px;
+      color: #a39a90;
+      font-size: 0.65rem;
+      cursor: pointer;
+    }
+
+    .go-btn:hover { background: #5a5047; }
+
+    .frame-area {
       flex: 1;
       position: relative;
     }
@@ -96,76 +137,79 @@
       background: #16130f;
     }
 
-    .splash {
+    .empty {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100%;
-      text-align: center;
-      padding: 2rem;
-    }
-
-    .splash h1 {
-      color: #beb6ae;
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    .splash p {
-      font-size: 0.8rem;
       color: #5a5047;
-      max-width: 280px;
-      line-height: 1.5;
-    }
-
-    .splash kbd {
-      background: #2c2620;
-      border: 1px solid #433b32;
-      border-radius: 3px;
-      padding: 1px 5px;
       font-size: 0.75rem;
-      color: #69AAB2;
     }
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <input class="url-input" id="url" type="text" placeholder="Enter URL or search..." spellcheck="false">
-    <button class="btn" onclick="go()">Go</button>
+  <div class="top-bar">
+    <div class="shortcuts">
+      <span class="shortcut" data-url="https://search.schrodingers.lol" data-pane="top">SearXNG</span>
+      <span class="shortcut" data-url="https://chat.schrodingers.lol" data-pane="top">Open WebUI</span>
+      <span class="shortcut" data-url="https://wind.schrodingers.lol" data-pane="top">Windmill</span>
+      <span class="shortcut" data-url="https://github.com/stochastic-sisyphus" data-pane="top">GitHub</span>
+    </div>
+    <button class="split-btn" id="split-toggle" onclick="toggleSplit()">Split</button>
   </div>
-  <div class="shortcuts" id="shortcuts">
-    <span class="shortcut" data-url="https://search.schrodingers.lol">SearXNG</span>
-    <span class="shortcut" data-url="https://chat.schrodingers.lol">Open WebUI</span>
-    <span class="shortcut" data-url="https://wind.schrodingers.lol">Windmill</span>
-    <span class="shortcut" data-url="https://github.com/stochastic-sisyphus">GitHub</span>
-  </div>
-  <div class="frame-container" id="frame-container">
-    <div class="splash" id="splash">
-      <h1>Research View</h1>
-      <p>Type a URL above or pick a shortcut. Use alongside chat for side-by-side research.</p>
+
+  <div class="panes single" id="panes">
+    <!-- Top pane -->
+    <div class="pane" id="pane-top">
+      <div class="pane-bar">
+        <span class="pane-label">top</span>
+        <input class="url-input" data-pane="top" type="text" placeholder="URL..." spellcheck="false">
+        <button class="go-btn" onclick="goPane('top')">Go</button>
+      </div>
+      <div class="frame-area" id="frame-top">
+        <div class="empty">Pick a shortcut or enter a URL</div>
+      </div>
+    </div>
+
+    <!-- Bottom pane -->
+    <div class="pane" id="pane-bottom">
+      <div class="pane-bar">
+        <span class="pane-label">btm</span>
+        <input class="url-input" data-pane="bottom" type="text" placeholder="URL..." spellcheck="false">
+        <button class="go-btn" onclick="goPane('bottom')">Go</button>
+      </div>
+      <div class="frame-area" id="frame-bottom">
+        <div class="empty">Pick a shortcut or enter a URL</div>
+      </div>
     </div>
   </div>
 
   <script>
-    const urlInput = document.getElementById('url');
-    const container = document.getElementById('frame-container');
-    const splash = document.getElementById('splash');
+    let isSplit = false;
 
-    function go() {
-      let url = urlInput.value.trim();
-      if (!url) return;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-      }
-      loadUrl(url);
+    function toggleSplit() {
+      isSplit = !isSplit;
+      document.getElementById('panes').className = isSplit ? 'panes split' : 'panes single';
+      document.getElementById('split-toggle').className = isSplit ? 'split-btn active' : 'split-btn';
     }
 
-    function loadUrl(url) {
-      urlInput.value = url;
-      if (splash) splash.remove();
-      let iframe = document.querySelector('iframe');
+    function goPane(pane) {
+      const input = document.querySelector(`.url-input[data-pane="${pane}"]`);
+      let url = input.value.trim();
+      if (!url) return;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+      loadPane(pane, url);
+    }
+
+    function loadPane(pane, url) {
+      const input = document.querySelector(`.url-input[data-pane="${pane}"]`);
+      const container = document.getElementById(`frame-${pane}`);
+      input.value = url;
+
+      const empty = container.querySelector('.empty');
+      if (empty) empty.remove();
+
+      let iframe = container.querySelector('iframe');
       if (!iframe) {
         iframe = document.createElement('iframe');
         iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox');
@@ -174,12 +218,20 @@
       iframe.src = url;
     }
 
-    urlInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') go();
+    // Enter key in URL inputs
+    document.querySelectorAll('.url-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') goPane(input.dataset.pane);
+      });
     });
 
+    // Shortcuts — click loads into top pane, shift+click into bottom
     document.querySelectorAll('.shortcut').forEach(el => {
-      el.addEventListener('click', () => loadUrl(el.dataset.url));
+      el.addEventListener('click', (e) => {
+        const pane = e.shiftKey ? 'bottom' : 'top';
+        if (pane === 'bottom' && !isSplit) toggleSplit();
+        loadPane(pane, el.dataset.url);
+      });
     });
   </script>
 </body>
