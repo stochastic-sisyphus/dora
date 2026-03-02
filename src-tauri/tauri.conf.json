@@ -1,0 +1,68 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Open WebUI",
+	"version": "0.1.0",
+	"identifier": "com.open-webui-desktop.app",
+	"build": {
+		"beforeDevCommand": "pnpm run dev",
+		"devUrl": "http://localhost:1420",
+		"beforeBuildCommand": "pnpm run build",
+		"frontendDist": "../build"
+	},
+	"app": {
+		"macOSPrivateApi": true,
+		"windows": [
+			{
+				"label": "main",
+				"title": "Open WebUI",
+				"url": "/",
+				"width": 800,
+				"height": 650,
+				"minWidth": 600,
+				"minHeight": 450,
+				"visible": true,
+				"transparent": false,
+				"titleBarStyle": "Overlay",
+				"hiddenTitle": true,
+				"resizable": true,
+				"minimizable": true
+			},
+{
+				"label": "chatbar",
+				"title": "Chatbar",
+				"url": "/",
+				"width": 600,
+				"height": 400,
+				"visible": false,
+				"visibleOnAllWorkspaces": true,
+				"transparent": true,
+				"decorations": false,
+				"alwaysOnTop": true,
+				"resizable": false,
+				"minimizable": false,
+				"dragDropEnabled": true,
+				"devtools": true
+			}
+		],
+		"security": {
+			"csp": null
+		}
+	},
+	"bundle": {
+		"active": true,
+		"macOS": {
+			"entitlements": "Entitlements.plist",
+			"exceptionDomain": "",
+			"frameworks": []
+		},
+		"resources": [],
+		"targets": "all",
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		]
+	}
+}

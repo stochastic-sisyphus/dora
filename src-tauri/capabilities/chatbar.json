@@ -1,0 +1,7 @@
+{
+	"$schema": "../gen/schemas/desktop-schema.json",
+	"identifier": "chatbar",
+	"description": "Capability for the minibar",
+	"windows": ["chatbar"],
+	"permissions": ["core:default", "opener:default"]
+}
