@@ -1,103 +1,130 @@
 use tauri::Manager;
 #[cfg(feature = "navigator")]
 use tauri::{WebviewUrl, WindowEvent};
+#[cfg(feature = "navigator")]
+use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(feature = "navigator")]
+use std::sync::Mutex;
 
 #[cfg(feature = "navigator")]
 const NAVIGATOR_SPLIT: f64 = 0.55;
 
 #[cfg(feature = "navigator")]
-#[tauri::command]
-async fn open_navigator(app: tauri::AppHandle) -> Result<(), String> {
-    // If the navigator window already exists, focus window AND the chat webview.
-    // Focusing only the window can leave the chat webview in a stale render state.
-    if let Some(window) = app.get_window("navigator") {
-        window.set_focus().map_err(|e| e.to_string())?;
-        if let Some(chat) = app.get_webview("navigator-chat") {
-            let _ = chat.set_focus();
+struct NavigatorState {
+    open: AtomicBool,
+    original_size: Mutex<Option<tauri::LogicalSize<f64>>>,
+}
+
+#[cfg(feature = "navigator")]
+impl Default for NavigatorState {
+    fn default() -> Self {
+        Self {
+            open: AtomicBool::new(false),
+            original_size: Mutex::new(None),
         }
-        return Ok(());
+    }
+}
+
+#[cfg(feature = "navigator")]
+#[tauri::command]
+async fn toggle_navigator(app: tauri::AppHandle) -> Result<(), String> {
+    let state = app.state::<NavigatorState>();
+
+    if state.open.load(Ordering::SeqCst) {
+        // === CLOSE: remove navigator, restore original size ===
+        if let Some(webview) = app.get_webview("navigator-research") {
+            webview.close().map_err(|e| e.to_string())?;
+        }
+
+        let window = app.get_window("main").ok_or("main window not found")?;
+        let main_wv = app.get_webview("main").ok_or("main webview not found")?;
+
+        // Restore original window size
+        if let Some(orig) = state.original_size.lock().unwrap().take() {
+            window.set_size(orig).map_err(|e| e.to_string())?;
+        }
+
+        // Main webview fills window
+        let size = window.inner_size().map_err(|e| e.to_string())?;
+        let scale = window.scale_factor().unwrap_or(1.0);
+        let w = size.width as f64 / scale;
+        let h = size.height as f64 / scale;
+        let _ = main_wv.set_position(tauri::LogicalPosition::new(0.0, 0.0));
+        let _ = main_wv.set_size(tauri::LogicalSize::new(w, h));
+
+        state.open.store(false, Ordering::SeqCst);
+    } else {
+        // === OPEN: widen window, shrink main webview, attach navigator ===
+        let window = app.get_window("main").ok_or("main window not found")?;
+        let main_wv = app.get_webview("main").ok_or("main webview not found")?;
+
+        // Store current size before widening
+        let current = window.inner_size().map_err(|e| e.to_string())?;
+        let scale = window.scale_factor().unwrap_or(1.0);
+        let current_w = current.width as f64 / scale;
+        let current_h = current.height as f64 / scale;
+
+        *state.original_size.lock().unwrap() = Some(tauri::LogicalSize::new(current_w, current_h));
+
+        // Widen window to at least 1400 logical px
+        let new_w = current_w.max(1400.0);
+        let new_h = current_h.max(800.0);
+        window
+            .set_size(tauri::LogicalSize::new(new_w, new_h))
+            .map_err(|e| e.to_string())?;
+
+        // Shrink main webview to left 55%
+        let left_w = (new_w * NAVIGATOR_SPLIT).round();
+        let _ = main_wv.set_position(tauri::LogicalPosition::new(0.0, 0.0));
+        let _ = main_wv.set_size(tauri::LogicalSize::new(left_w, new_h));
+
+        // Add navigator webview on the right, loading the SvelteKit route
+        let right_w = new_w - left_w;
+        window
+            .add_child(
+                tauri::webview::WebviewBuilder::new(
+                    "navigator-research",
+                    WebviewUrl::App("/navigator".into()),
+                )
+                .on_page_load(move |webview, payload| {
+                    if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                        // Nudge wry/WebKit into a repaint (proven workaround)
+                        if let Ok(size) = webview.size() {
+                            let _ = webview.set_size(size);
+                        }
+                    }
+                }),
+                tauri::LogicalPosition::new(left_w, 0.0),
+                tauri::LogicalSize::new(right_w, new_h),
+            )
+            .map_err(|e| e.to_string())?;
+
+        state.open.store(true, Ordering::SeqCst);
     }
 
-    let width: f64 = 1400.0;
-    let height: f64 = 900.0;
-
-    // Create a bare window (no default webview) for the split layout
-    let window = tauri::window::WindowBuilder::new(&app, "navigator")
-        .title("Navigator")
-        .inner_size(width, height)
-        .min_inner_size(800.0, 500.0)
-        .resizable(true)
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let left_width = (width * NAVIGATOR_SPLIT).round();
-    let right_width = width - left_width;
-
-    // Left pane: Open WebUI chat.
-    // .focused(true) ensures the webview gets initial focus, which triggers
-    // the first paint on macOS wry. Without this, the webview can remain blank
-    // if the right pane steals focus during creation.
-    // .on_page_load forces a size re-set after the page finishes loading,
-    // which works around a wry race where child webviews render at 0x0
-    // if the window hasn't fully laid out yet.
-    let left = window
-        .add_child(
-            tauri::webview::WebviewBuilder::new(
-                "navigator-chat",
-                WebviewUrl::App("/".into()),
-            )
-            .focused(true)
-            .on_page_load(move |webview, payload| {
-                if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
-                    // Force a re-layout by reading current size and re-applying it.
-                    // This nudges wry/WebKit into a
-                    // repaint when the initial render was missed.
-                    if let Ok(size) = webview.size() {
-                        let _ = webview.set_size(size);
-                    }
-                }
-            }),
-            tauri::LogicalPosition::new(0.0, 0.0),
-            tauri::LogicalSize::new(left_width, height),
-        )
-        .map_err(|e| e.to_string())?;
-
-    // Right pane: Research view
-    let right = window
-        .add_child(
-            tauri::webview::WebviewBuilder::new(
-                "navigator-research",
-                WebviewUrl::App("navigator.html".into()),
-            ),
-            tauri::LogicalPosition::new(left_width, 0.0),
-            tauri::LogicalSize::new(right_width, height),
-        )
-        .map_err(|e| e.to_string())?;
-
-    // Handle resize: reposition both webviews when the window size changes.
-    // The Resized event provides PhysicalSize, but child webview set_size /
-    // set_position on macOS operate in logical (point) coordinates internally.
-    // Passing raw physical values on a HiDPI display (scale_factor 2) doubles
-    // the intended dimensions, causing webviews to overlap and swallow clicks.
-    // Convert to logical units via the window's scale factor.
-    let win_ref = window.clone();
-    window.on_window_event(move |event| {
-        if let WindowEvent::Resized(phys) = event {
-            let scale = win_ref.scale_factor().unwrap_or(1.0);
-            let w = phys.width as f64 / scale;
-            let h = phys.height as f64 / scale;
-
-            let left_w = (w * NAVIGATOR_SPLIT).round();
-            let right_w = w - left_w;
-
-            let _ = left.set_position(tauri::LogicalPosition::new(0.0, 0.0));
-            let _ = left.set_size(tauri::LogicalSize::new(left_w, h));
-            let _ = right.set_position(tauri::LogicalPosition::new(left_w, 0.0));
-            let _ = right.set_size(tauri::LogicalSize::new(right_w, h));
-        }
-    });
-
     Ok(())
+}
+
+/// Server-side SearXNG fetch — bypasses Authelia since the request
+/// comes from the Tauri backend, not a browser webview.
+#[cfg(feature = "navigator")]
+#[tauri::command]
+async fn searxng_search(
+    query: String,
+    categories: Option<String>,
+    searxng_url: Option<String>,
+) -> Result<String, String> {
+    let base = searxng_url.unwrap_or_else(|| "https://search.schrodingers.lol".to_string());
+    let cats = categories.unwrap_or_else(|| "general".to_string());
+    let url = format!(
+        "{}/search?q={}&format=json&categories={}",
+        base.trim_end_matches('/'),
+        urlencoding::encode(&query),
+        urlencoding::encode(&cats),
+    );
+    let client = reqwest::Client::new();
+    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    resp.text().await.map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -114,7 +141,43 @@ pub fn run() {
 
     #[cfg(feature = "navigator")]
     {
-        builder = builder.invoke_handler(tauri::generate_handler![open_navigator]);
+        builder = builder
+            .manage(NavigatorState::default())
+            .invoke_handler(tauri::generate_handler![toggle_navigator, searxng_search])
+            .setup(|app| {
+                // Resize handler: maintains split ratio when navigator is open.
+                // Installed once at startup, checks NavigatorState on each resize.
+                let window = app.get_window("main").expect("main window must exist");
+                let app_handle = app.handle().clone();
+                window.on_window_event(move |event| {
+                    if let WindowEvent::Resized(phys) = event {
+                        let state = app_handle.state::<NavigatorState>();
+                        if !state.open.load(Ordering::SeqCst) {
+                            return;
+                        }
+                        let scale = app_handle
+                            .get_window("main")
+                            .and_then(|w| w.scale_factor().ok())
+                            .unwrap_or(1.0);
+                        let w = phys.width as f64 / scale;
+                        let h = phys.height as f64 / scale;
+
+                        let left_w = (w * NAVIGATOR_SPLIT).round();
+                        let right_w = w - left_w;
+
+                        if let Some(main_wv) = app_handle.get_webview("main") {
+                            let _ = main_wv.set_position(tauri::LogicalPosition::new(0.0, 0.0));
+                            let _ = main_wv.set_size(tauri::LogicalSize::new(left_w, h));
+                        }
+                        if let Some(nav_wv) = app_handle.get_webview("navigator-research") {
+                            let _ =
+                                nav_wv.set_position(tauri::LogicalPosition::new(left_w, 0.0));
+                            let _ = nav_wv.set_size(tauri::LogicalSize::new(right_w, h));
+                        }
+                    }
+                });
+                Ok(())
+            });
     }
 
     #[cfg(target_os = "macos")]

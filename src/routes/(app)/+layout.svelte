@@ -169,12 +169,12 @@
 					}, 0);
 				}
 
-				// Check if Ctrl/Cmd + Shift + N is pressed (open navigator)
+				// Check if Ctrl/Cmd + Shift + N is pressed (toggle navigator sidecar)
 				if (isCtrlPressed && isShiftPressed && event.key.toLowerCase() === 'n') {
 					event.preventDefault();
 					if (IS_TAURI) {
-						const { openNavigator } = await import('$lib/app/commands/open-navigator');
-						await openNavigator();
+						const { toggleNavigator } = await import('$lib/app/commands/open-navigator');
+						await toggleNavigator();
 					}
 				}
 			});
