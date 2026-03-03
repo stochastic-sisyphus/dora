@@ -8,7 +8,7 @@
 	import { getBackendConfig } from '$lib/apis';
 	import { getSessionUser } from '$lib/apis/auths';
 	import reopenMainWindow from '$lib/app/actions/reopen-main-window';
-	import { MAIN_WINDOW_LABEL, OPEN_IN_MAIN_WINDOW } from '$lib/app/constants';
+	import { CHATBAR_WINDOW_LABEL, MAIN_WINDOW_LABEL, OPEN_IN_MAIN_WINDOW } from '$lib/app/constants';
 	import Draggable from '$lib/components/desktop-app/Draggable.svelte';
 	import i18n, { getLanguages, initI18n } from '$lib/i18n';
 	import {
@@ -27,7 +27,6 @@
 	import { bestMatchingLanguage, delay } from '$lib/utils';
 	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
-	import { unregisterAll } from '@tauri-apps/plugin-global-shortcut';
 	import { io } from 'socket.io-client';
 	import { onMount, setContext, tick } from 'svelte';
 	import { Toaster } from 'svelte-sonner';
@@ -42,6 +41,7 @@
 
 	let loaded = false;
 	const IS_MAIN_WINDOW = getCurrentWindow().label === MAIN_WINDOW_LABEL;
+	const IS_CHATBAR_WINDOW = getCurrentWindow().label === CHATBAR_WINDOW_LABEL;
 	const BREAKPOINT = 768;
 
 	$: console.log('Loaded changed', loaded);
@@ -109,6 +109,16 @@
 			console.log('Waiting 100ms for cross window stores to load...');
 			await delay(100);
 			console.log('They should be loaded now!');
+
+			// Chatbar window only needs stores loaded and theme applied.
+			// Its own layout (chatbar/+layout.svelte) handles shortcuts,
+			// positioning, and focus. Skip the heavy main-window init.
+			if (IS_CHATBAR_WINDOW) {
+				theme.set(localStorage.theme);
+				initI18n();
+				loaded = true;
+				return;
+			}
 
 			/////////////////////////////////
 			// INITIALIZE APP STATE
@@ -251,14 +261,16 @@
 		return async () => {
 			window.removeEventListener('resize', onResize);
 
-			// Unregister all global shortcuts
-			await unregisterAll();
+			// Do NOT call unregisterAll() here. Global shortcuts are registered
+			// by the chatbar window and managed by chatbar/+layout.svelte.
+			// Calling unregisterAll() during {#key} re-creation would kill the
+			// chatbar's shortcuts with no guarantee they re-register in time.
 
 			// Unlisten to Reopen event
-			unlistenReopen();
+			if (unlistenReopen) unlistenReopen();
 
 			// Unlisten to Open in Main Window event
-			unlistenOpenInMainWindow();
+			if (unlistenOpenInMainWindow) unlistenOpenInMainWindow();
 		};
 	});
 </script>

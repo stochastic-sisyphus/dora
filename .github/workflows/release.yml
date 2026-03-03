@@ -150,6 +150,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ''
+          NAVIGATOR: 'true'
         with:
           tagName: dora-v${{ inputs.tag }}
           releaseName: 'Dora Desktop v${{ inputs.tag }}'
@@ -162,7 +163,7 @@ jobs:
             **Linux:** .deb or .AppImage
           releaseDraft: false
           prerelease: false
-          args: --target ${{ matrix.target }} --features navigator
+          args: --target ${{ matrix.target }} --features navigator --config tauri.navigator.conf.json
 
   navigator-linux:
     runs-on: ubuntu-22.04
@@ -206,10 +207,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ''
+          NAVIGATOR: 'true'
         with:
           tagName: dora-v${{ inputs.tag }}
           releaseName: 'Dora Desktop v${{ inputs.tag }}'
           releaseBody: ''
           releaseDraft: false
           prerelease: false
-          args: --target ${{ matrix.target }} --features navigator
+          args: --target ${{ matrix.target }} --features navigator --config tauri.navigator.conf.json

@@ -51,11 +51,19 @@ export default async function onShortcut(event: ShortcutEvent) {
 		await window.emitTo('chatbar', COMPANION_CHAT_EXPIRED);
 		await window.setResizable(false);
 		await window.setSize(CHATBAR_WINDOW_SIZE);
-		await moveChatBar(chatBarPosition, companionChatOpen);
+		try {
+			await moveChatBar(chatBarPosition, companionChatOpen);
+		} catch (e) {
+			console.warn('Failed to position chatbar:', e);
+		}
 		// 1/60s delay to allow movement, resizing, state change before it appears
 		await new Promise((resolve) => setTimeout(resolve, 17));
 	} else if (!companionChatOpen) {
-		await moveChatBar(chatBarPosition, companionChatOpen);
+		try {
+			await moveChatBar(chatBarPosition, companionChatOpen);
+		} catch (e) {
+			console.warn('Failed to position chatbar:', e);
+		}
 	}
 
 	await window.show();

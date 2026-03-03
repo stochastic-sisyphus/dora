@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { APP_STORE_FILE } from '$lib/app/constants';
+	import { APP_NAME } from '$lib/constants';
 	import { WEBUI_BASE_URL } from '$lib/stores';
 	import { getStore } from '@tauri-apps/plugin-store';
 	import type { i18n as i18nType } from 'i18next';
@@ -60,7 +61,7 @@
 		<div class="w-full sm:max-w-md px-10 min-h-screen flex flex-col text-center">
 			<div class="my-auto pb-10 w-full dark:text-gray-100">
 				<h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
-					Welcome to Open WebUI
+					Welcome to {APP_NAME}
 					<!-- {$i18n.t('Welcome to Open WebUI')} -->
 				</h1>
 

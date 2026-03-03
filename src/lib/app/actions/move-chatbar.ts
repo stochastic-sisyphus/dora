@@ -1,4 +1,4 @@
-import { PhysicalPosition, Window, currentMonitor } from '@tauri-apps/api/window';
+import { PhysicalPosition, Window, currentMonitor, primaryMonitor } from '@tauri-apps/api/window';
 import {
 	CHATBAR_BOTTOM_MARGIN,
 	CHATBAR_HORIZONTAL_MARGIN,
@@ -17,7 +17,8 @@ export default async function moveChatBar(
 	}
 
 	const window = await Window.getByLabel(CHATBAR_WINDOW_LABEL);
-	const monitor = await currentMonitor();
+	// currentMonitor() can return null for hidden windows, fall back to primary
+	const monitor = (await currentMonitor()) ?? (await primaryMonitor());
 
 	if (!window) {
 		throw new Error('Failed to get chatbar window');

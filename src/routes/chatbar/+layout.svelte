@@ -18,19 +18,22 @@
 	onMount(() => {
 		let unlistenFocusChange: UnlistenFn;
 		(async () => {
-			// Get models and tools
-			// models.set(await getModels(localStorage.token));
-			// tools.set(await getTools(localStorage.token));
+			const chatBarWindow = getCurrentWindow();
 
-			// Move chat bar
-			await moveChatBar($appConfig.chatBarPositionPreference, false);
-
-			// Set global shortcut
+			// Register global shortcut first — this is the critical path.
+			// moveChatBar can fail for hidden windows (currentMonitor returns null),
+			// so the shortcut must be registered before anything that might throw.
 			await setShortcut($appConfig.shortcut);
 
 			// Add shadows
-			const chatBarWindow = getCurrentWindow();
 			await chatBarWindow.setShadow(true);
+
+			// Move chat bar (best-effort for initial positioning)
+			try {
+				await moveChatBar($appConfig.chatBarPositionPreference, false);
+			} catch (e) {
+				console.warn('Initial chatbar positioning failed (window may be hidden):', e);
+			}
 
 			// Set lose focus: hide
 			unlistenFocusChange = await chatBarWindow.onFocusChanged(async ({ payload: focused }) => {
