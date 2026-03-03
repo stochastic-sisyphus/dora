@@ -4,12 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Research View</title>
+  <script type="importmap">{
+    "imports": {
+      "@observablehq/runtime": "https://cdn.jsdelivr.net/npm/@observablehq/runtime@5/dist/runtime.js",
+      "@observablehq/plot": "https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6/+esm"
+    }
+  }</script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    :root {
+      --bg: #16130f;
+      --panel: #2c2620;
+      --border: #433b32;
+      --muted-bg: #5a5047;
+      --muted-txt: #8a8075;
+      --text: #a39a90;
+      --bright: #beb6ae;
+      --brightest: #dbd6d1;
+      --brown: #5C4543;
+      --olive: #46696B;
+      --sage: #58606D;
+      --teal: #69AAB2;
+      --steel: #AEBDC7;
+      --purple: #5C5A72;
+      --rose: #C6C2D2;
+      --red: #1D4954;
+    }
+
     body {
-      background: #16130f;
-      color: #a39a90;
+      background: var(--bg);
+      color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       display: flex;
       flex-direction: column;
@@ -17,13 +42,14 @@
       overflow: hidden;
     }
 
+    /* ---- TOP BAR ---- */
     .top-bar {
       display: flex;
       align-items: center;
       gap: 4px;
       padding: 4px 8px;
-      background: #2c2620;
-      border-bottom: 1px solid #433b32;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
@@ -31,36 +57,50 @@
       display: flex;
       gap: 3px;
       overflow-x: auto;
-      flex: 1;
+      flex-shrink: 0;
     }
 
     .shortcut {
-      background: #16130f;
-      border: 1px solid #433b32;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 3px;
       padding: 2px 7px;
-      color: #8a8075;
+      color: var(--muted-txt);
       font-size: 0.65rem;
       cursor: pointer;
       white-space: nowrap;
     }
+    .shortcut:hover { border-color: var(--teal); color: var(--teal); }
 
-    .shortcut:hover { border-color: #69AAB2; color: #69AAB2; }
+    .search-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 4px 10px;
+      color: var(--brightest);
+      font-size: 0.8rem;
+      font-family: inherit;
+      outline: none;
+      min-width: 0;
+    }
+    .search-input:focus { border-color: var(--teal); }
+    .search-input::placeholder { color: var(--muted-bg); }
 
     .split-btn {
-      background: #433b32;
+      background: var(--border);
       border: none;
       border-radius: 3px;
       padding: 2px 7px;
-      color: #8a8075;
+      color: var(--muted-txt);
       font-size: 0.65rem;
       cursor: pointer;
       white-space: nowrap;
     }
+    .split-btn:hover { background: var(--muted-bg); }
+    .split-btn.active { background: var(--teal); color: var(--bg); }
 
-    .split-btn:hover { background: #5a5047; }
-    .split-btn.active { background: #69AAB2; color: #16130f; }
-
+    /* ---- PANES ---- */
     .panes {
       flex: 1;
       display: flex;
@@ -77,7 +117,7 @@
     .panes.single .pane:first-child { flex: 1; }
     .panes.single .pane:last-child { display: none; }
     .panes.split .pane { flex: 1; }
-    .panes.split .pane:first-child { border-bottom: 2px solid #433b32; }
+    .panes.split .pane:first-child { border-bottom: 2px solid var(--border); }
 
     .pane-bar {
       display: flex;
@@ -85,13 +125,13 @@
       gap: 4px;
       padding: 3px 6px;
       background: #1e1b17;
-      border-bottom: 1px solid #433b32;
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
     .pane-label {
       font-size: 0.6rem;
-      color: #5a5047;
+      color: var(--muted-bg);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       flex-shrink: 0;
@@ -99,42 +139,41 @@
 
     .url-input {
       flex: 1;
-      background: #16130f;
-      border: 1px solid #433b32;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 3px;
       padding: 3px 8px;
-      color: #beb6ae;
+      color: var(--bright);
       font-size: 0.75rem;
       font-family: inherit;
       outline: none;
       min-width: 0;
     }
-
-    .url-input:focus { border-color: #69AAB2; }
-    .url-input::placeholder { color: #5a5047; }
+    .url-input:focus { border-color: var(--teal); }
+    .url-input::placeholder { color: var(--muted-bg); }
 
     .go-btn {
-      background: #433b32;
+      background: var(--border);
       border: none;
       border-radius: 3px;
       padding: 3px 8px;
-      color: #a39a90;
+      color: var(--text);
       font-size: 0.65rem;
       cursor: pointer;
     }
-
-    .go-btn:hover { background: #5a5047; }
+    .go-btn:hover { background: var(--muted-bg); }
 
     .frame-area {
       flex: 1;
       position: relative;
+      overflow: hidden;
     }
 
     iframe {
       width: 100%;
       height: 100%;
       border: none;
-      background: #16130f;
+      background: var(--bg);
     }
 
     .empty {
@@ -142,8 +181,393 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      color: #5a5047;
+      color: var(--muted-bg);
       font-size: 0.75rem;
+    }
+
+    /* ---- CATEGORY TABS ---- */
+    .category-tabs {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .cat-tab {
+      background: var(--bg);
+      border: none;
+      padding: 4px 10px;
+      color: var(--muted-txt);
+      font-size: 0.65rem;
+      cursor: pointer;
+      position: relative;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .cat-tab:hover { color: var(--bright); background: var(--panel); }
+    .cat-tab.active {
+      color: var(--teal);
+      background: var(--panel);
+    }
+    .cat-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--teal);
+    }
+    .cat-tab .count {
+      font-size: 0.55rem;
+      color: var(--muted-bg);
+      margin-left: 3px;
+    }
+    .cat-tab.active .count { color: var(--teal); opacity: 0.7; }
+
+    /* ---- SEARCH RESULTS ---- */
+    .results-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .results-container::-webkit-scrollbar { width: 6px; }
+    .results-container::-webkit-scrollbar-track { background: var(--bg); }
+    .results-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .results-container::-webkit-scrollbar-thumb:hover { background: var(--muted-bg); }
+
+    /* Loading state */
+    .loading-bar {
+      height: 2px;
+      background: var(--border);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .loading-bar.active::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -40%;
+      width: 40%;
+      height: 100%;
+      background: var(--teal);
+      animation: loading 1s ease-in-out infinite;
+    }
+    @keyframes loading {
+      0% { left: -40%; }
+      100% { left: 100%; }
+    }
+
+    /* ---- RESULT CARDS ---- */
+    .result-card {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-card:hover { background: var(--panel); }
+
+    .result-title {
+      font-size: 0.8rem;
+      color: var(--teal);
+      text-decoration: none;
+      display: block;
+      line-height: 1.3;
+    }
+    .result-title:hover { color: var(--steel); }
+
+    .result-url {
+      font-size: 0.6rem;
+      color: var(--muted-txt);
+      margin-top: 1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result-snippet {
+      font-size: 0.72rem;
+      color: var(--text);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .result-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .engine-badge {
+      font-size: 0.55rem;
+      padding: 1px 5px;
+      border-radius: 2px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--muted-txt);
+    }
+    .engine-badge.unique {
+      border-color: var(--rose);
+      color: var(--rose);
+      background: rgba(92, 90, 114, 0.15);
+    }
+
+    .result-score {
+      font-size: 0.55rem;
+      color: var(--muted-bg);
+    }
+
+    .result-date {
+      font-size: 0.55rem;
+      color: var(--olive);
+    }
+
+    /* ---- INFOBOX CARD ---- */
+    .infobox-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .infobox-header {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .infobox-img {
+      width: 64px;
+      height: 64px;
+      border-radius: 4px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+
+    .infobox-title {
+      font-size: 0.9rem;
+      color: var(--brightest);
+      font-weight: 600;
+    }
+
+    .infobox-content {
+      font-size: 0.72rem;
+      color: var(--text);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .infobox-links {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .infobox-link {
+      font-size: 0.65rem;
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .infobox-link:hover { color: var(--steel); }
+
+    /* ---- ANSWER CARD ---- */
+    .answer-card {
+      background: rgba(70, 105, 107, 0.1);
+      border: 1px solid var(--olive);
+      border-radius: 4px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .answer-label {
+      font-size: 0.55rem;
+      color: var(--olive);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .answer-text {
+      font-size: 0.8rem;
+      color: var(--brightest);
+      line-height: 1.5;
+    }
+
+    .answer-source {
+      font-size: 0.6rem;
+      color: var(--muted-txt);
+      margin-top: 4px;
+    }
+
+    /* ---- ACADEMIC CARD ---- */
+    .academic-card {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      border-left: 3px solid var(--purple);
+    }
+    .academic-card:hover { background: var(--panel); }
+
+    .academic-authors {
+      font-size: 0.65rem;
+      color: var(--muted-txt);
+      margin-top: 2px;
+    }
+
+    .academic-venue {
+      font-size: 0.6rem;
+      color: var(--sage);
+      margin-top: 2px;
+    }
+
+    .academic-tags {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .academic-tag {
+      font-size: 0.5rem;
+      padding: 1px 5px;
+      border-radius: 2px;
+      background: rgba(92, 90, 114, 0.2);
+      color: var(--rose);
+    }
+
+    .doi-link {
+      font-size: 0.6rem;
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .doi-link:hover { text-decoration: underline; }
+
+    /* ---- IMAGE GRID ---- */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 4px;
+      padding: 4px;
+    }
+
+    .image-cell {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 3px;
+      cursor: pointer;
+      background: var(--panel);
+    }
+
+    .image-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-cell .image-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(22,19,15,0.9));
+      padding: 4px 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .image-cell:hover .image-overlay { opacity: 1; }
+
+    .image-overlay .image-meta {
+      font-size: 0.5rem;
+      color: var(--bright);
+    }
+
+    /* ---- SUGGESTIONS ---- */
+    .suggestions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      padding: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .suggestion {
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--muted-txt);
+      cursor: pointer;
+    }
+    .suggestion:hover { border-color: var(--teal); color: var(--teal); }
+
+    /* ---- COUNTER-SEARCH ---- */
+    .counter-label {
+      font-size: 0.6rem;
+      color: var(--brown);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 8px 10px 4px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ---- VIZ OVERLAY ---- */
+    .viz-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+      z-index: 10;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .viz-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .viz-overlay.pinned {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .viz-mode-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .viz-mode-btn {
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--muted-txt);
+      cursor: pointer;
+    }
+    .viz-mode-btn.active { border-color: var(--teal); color: var(--teal); }
+    .viz-mode-btn:hover { color: var(--bright); }
+
+    .pin-btn {
+      margin-left: auto;
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted-txt);
+      cursor: pointer;
+    }
+    .pin-btn.pinned { border-color: var(--teal); color: var(--teal); }
+
+    /* ---- SEARCH STATUS ---- */
+    .search-status {
+      font-size: 0.6rem;
+      color: var(--muted-bg);
+      padding: 4px 10px;
+      flex-shrink: 0;
     }
   </style>
 </head>
@@ -155,23 +579,23 @@
       <span class="shortcut" data-url="https://wind.schrodingers.lol" data-pane="top">Windmill</span>
       <span class="shortcut" data-url="https://github.com/stochastic-sisyphus" data-pane="top">GitHub</span>
     </div>
+    <input class="search-input" id="search-bar" type="text" placeholder="Search or enter URL..." spellcheck="false">
     <button class="split-btn" id="split-toggle" onclick="toggleSplit()">Split</button>
   </div>
 
   <div class="panes single" id="panes">
-    <!-- Top pane -->
+    <!-- Top pane: research results -->
     <div class="pane" id="pane-top">
-      <div class="pane-bar">
-        <span class="pane-label">top</span>
-        <input class="url-input" data-pane="top" type="text" placeholder="URL..." spellcheck="false">
-        <button class="go-btn" onclick="goPane('top')">Go</button>
-      </div>
+      <div class="loading-bar" id="loading-bar"></div>
+      <div class="category-tabs" id="category-tabs" style="display:none"></div>
       <div class="frame-area" id="frame-top">
-        <div class="empty">Pick a shortcut or enter a URL</div>
+        <div class="empty" id="empty-state">Search anything — queries go to SearXNG, URLs load in iframe</div>
+        <div class="results-container" id="results-container" style="display:none"></div>
+        <div class="viz-overlay" id="viz-overlay"></div>
       </div>
     </div>
 
-    <!-- Bottom pane -->
+    <!-- Bottom pane: iframe browser -->
     <div class="pane" id="pane-bottom">
       <div class="pane-bar">
         <span class="pane-label">btm</span>
@@ -185,12 +609,573 @@
   </div>
 
   <script>
-    let isSplit = false;
+    // ========================================
+    // STATE
+    // ========================================
+    const SEARXNG = 'https://search.schrodingers.lol';
+    const CATEGORIES = ['general', 'science', 'news', 'it', 'images'];
+    const CATEGORY_LABELS = { general: 'All', science: 'Science', news: 'News', it: 'Dev', images: 'Images' };
 
-    function toggleSplit() {
-      isSplit = !isSplit;
-      document.getElementById('panes').className = isSplit ? 'panes split' : 'panes single';
-      document.getElementById('split-toggle').className = isSplit ? 'split-btn active' : 'split-btn';
+    let isSplit = false;
+    let activeCategory = 'general';
+    let searchResults = {};   // { category: SearXNG response }
+    let currentQuery = '';
+    let counterResults = null;
+    let vizPinned = false;
+    let optionHeld = false;
+
+    // ========================================
+    // SEARCH BAR — detect URL vs query
+    // ========================================
+    const searchBar = document.getElementById('search-bar');
+
+    searchBar.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = searchBar.value.trim();
+        if (!val) return;
+
+        // Bang support: !reddit, !hn, etc. pass through to SearXNG
+        if (isURL(val)) {
+          loadPaneURL('top', val.startsWith('http') ? val : 'https://' + val);
+        } else {
+          performSearch(val);
+        }
+      }
+    });
+
+    function isURL(str) {
+      // Looks like a URL if it has a dot and no spaces, or starts with http
+      return /^https?:\/\//.test(str) || (/^[^\s]+\.[^\s]+$/.test(str) && !str.includes(' '));
+    }
+
+    // ========================================
+    // MULTI-CATEGORY SEARCH
+    // ========================================
+    async function performSearch(query) {
+      currentQuery = query;
+      searchResults = {};
+      counterResults = null;
+      activeCategory = 'general';
+
+      showLoading(true);
+      hideEmpty();
+      showResults();
+      renderCategoryTabs();
+
+      // Parallel fetch all categories
+      const fetches = CATEGORIES.map(cat => fetchCategory(query, cat));
+      await Promise.allSettled(fetches);
+
+      showLoading(false);
+      renderCategoryTabs();
+      renderActiveCategory();
+
+      // Fire counter-search after initial results land
+      fireCounterSearch(query);
+    }
+
+    async function fetchCategory(query, category) {
+      try {
+        const params = new URLSearchParams({ q: query, format: 'json', categories: category });
+        const res = await fetch(`${SEARXNG}/search?${params}`);
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        searchResults[category] = data;
+      } catch (err) {
+        console.error(`Search failed for ${category}:`, err);
+        searchResults[category] = { results: [], error: err.message };
+      }
+    }
+
+    // ========================================
+    // COUNTER-SEARCH (Phase 3)
+    // ========================================
+    async function fireCounterSearch(query) {
+      // Strip bangs for counter-query
+      const clean = query.replace(/![a-z]+\s*/gi, '').trim();
+      if (!clean) return;
+
+      const negations = [`"problems with" ${clean}`, `${clean} criticism OR limitations OR drawbacks`];
+      const counterQuery = negations[0]; // use the first pattern
+
+      try {
+        const params = new URLSearchParams({ q: counterQuery, format: 'json', categories: 'general' });
+        const res = await fetch(`${SEARXNG}/search?${params}`);
+        if (!res.ok) return;
+        counterResults = await res.json();
+        // Re-render if we're on the general tab
+        if (activeCategory === 'general') renderActiveCategory();
+        // Add counter tab
+        renderCategoryTabs();
+      } catch (err) {
+        console.error('Counter-search failed:', err);
+      }
+    }
+
+    // ========================================
+    // SHAPE DETECTOR
+    // ========================================
+    function detectShape(data) {
+      if (!data || !data.results) return 'EMPTY';
+      if (data.results.length === 0 && (!data.answers || data.answers.length === 0)) return 'EMPTY';
+
+      const first = data.results[0];
+      if (!first) return data.answers?.length ? 'ANSWER' : 'EMPTY';
+
+      const template = first.template || '';
+      const category = first.category || '';
+
+      if (template === 'paper.html') return 'ACADEMIC';
+      if (template === 'images.html') return 'IMAGES';
+      if (template === 'videos.html') return 'VIDEOS';
+      if (category === 'news') return 'NEWS';
+      if (category === 'it') return 'IT_DEV';
+      return 'GENERAL';
+    }
+
+    // ========================================
+    // CATEGORY TABS
+    // ========================================
+    function renderCategoryTabs() {
+      const container = document.getElementById('category-tabs');
+      container.style.display = 'flex';
+      container.innerHTML = '';
+
+      for (const cat of CATEGORIES) {
+        const data = searchResults[cat];
+        const count = data?.results?.length || 0;
+        const tab = document.createElement('button');
+        tab.className = `cat-tab${cat === activeCategory ? ' active' : ''}`;
+        tab.innerHTML = `${CATEGORY_LABELS[cat]}<span class="count">${count || ''}</span>`;
+        tab.onclick = () => {
+          activeCategory = cat;
+          renderCategoryTabs();
+          renderActiveCategory();
+        };
+        container.appendChild(tab);
+      }
+
+      // Counter-search tab
+      if (counterResults && counterResults.results?.length) {
+        const tab = document.createElement('button');
+        tab.className = `cat-tab${activeCategory === 'counter' ? ' active' : ''}`;
+        tab.style.color = activeCategory === 'counter' ? '' : 'var(--brown)';
+        tab.innerHTML = `Counterpoint<span class="count">${counterResults.results.length}</span>`;
+        tab.onclick = () => {
+          activeCategory = 'counter';
+          renderCategoryTabs();
+          renderActiveCategory();
+        };
+        container.appendChild(tab);
+      }
+    }
+
+    // ========================================
+    // RENDERERS
+    // ========================================
+    function renderActiveCategory() {
+      const container = document.getElementById('results-container');
+      container.innerHTML = '';
+
+      const data = activeCategory === 'counter' ? counterResults : searchResults[activeCategory];
+      if (!data) {
+        container.innerHTML = '<div class="empty">Loading...</div>';
+        return;
+      }
+
+      const shape = activeCategory === 'counter' ? 'GENERAL' : detectShape(data);
+
+      // Render answers first (if any)
+      if (data.answers?.length) {
+        for (const ans of data.answers) {
+          container.appendChild(renderAnswer(ans));
+        }
+      }
+
+      // Render infoboxes
+      if (data.infoboxes?.length) {
+        for (const box of data.infoboxes) {
+          container.appendChild(renderInfobox(box));
+        }
+      }
+
+      // Counter-search label
+      if (activeCategory === 'counter') {
+        const label = document.createElement('div');
+        label.className = 'counter-label';
+        label.textContent = `Counterpoints for "${currentQuery}"`;
+        container.appendChild(label);
+      }
+
+      // Render results by shape
+      switch (shape) {
+        case 'ACADEMIC':
+          for (const r of data.results) container.appendChild(renderAcademic(r));
+          break;
+        case 'IMAGES':
+          container.appendChild(renderImageGrid(data.results));
+          break;
+        case 'VIDEOS':
+          for (const r of data.results) container.appendChild(renderVideo(r));
+          break;
+        case 'NEWS':
+          for (const r of data.results) container.appendChild(renderNews(r));
+          break;
+        case 'IT_DEV':
+          for (const r of data.results) container.appendChild(renderITDev(r));
+          break;
+        case 'GENERAL':
+        default:
+          for (const r of data.results) container.appendChild(renderGeneral(r));
+          break;
+        case 'EMPTY':
+          container.innerHTML = '<div class="empty">No results</div>';
+          break;
+      }
+
+      // Suggestions
+      if (data.suggestions?.length) {
+        const sugDiv = document.createElement('div');
+        sugDiv.className = 'suggestions';
+        for (const s of data.suggestions) {
+          const chip = document.createElement('span');
+          chip.className = 'suggestion';
+          chip.textContent = s;
+          chip.onclick = () => {
+            searchBar.value = s;
+            performSearch(s);
+          };
+          sugDiv.appendChild(chip);
+        }
+        container.appendChild(sugDiv);
+      }
+
+      // Update viz overlay data
+      updateVizData();
+    }
+
+    // -- General result card --
+    function renderGeneral(r) {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+
+      const isUnique = r.engines?.length === 1;
+
+      card.innerHTML = `
+        <a class="result-title" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>
+        <div class="result-url">${esc(r.parsed_url?.[1] || r.url)}</div>
+        ${r.content ? `<div class="result-snippet">${esc(r.content)}</div>` : ''}
+        <div class="result-meta">
+          ${(r.engines || []).map(e => `<span class="engine-badge${isUnique ? ' unique' : ''}">${esc(e)}</span>`).join('')}
+          <span class="result-score">${r.score?.toFixed(1) || ''}</span>
+          ${r.publishedDate ? `<span class="result-date">${formatDate(r.publishedDate)}</span>` : ''}
+        </div>
+      `;
+
+      // Click title to load in bottom pane instead of new tab
+      const titleLink = card.querySelector('.result-title');
+      titleLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!isSplit) toggleSplit();
+        loadPaneURL('bottom', r.url);
+      });
+
+      return card;
+    }
+
+    // -- Answer card --
+    function renderAnswer(ans) {
+      const card = document.createElement('div');
+      card.className = 'answer-card';
+      card.innerHTML = `
+        <div class="answer-label">Direct Answer</div>
+        <div class="answer-text">${esc(ans.answer)}</div>
+        <div class="answer-source">${esc(ans.engine)} ${ans.url ? `&mdash; <a href="${esc(ans.url)}" class="doi-link" target="_blank">${esc(ans.url)}</a>` : ''}</div>
+      `;
+      return card;
+    }
+
+    // -- Infobox card --
+    function renderInfobox(box) {
+      const card = document.createElement('div');
+      card.className = 'infobox-card';
+      card.innerHTML = `
+        <div class="infobox-header">
+          ${box.img_src ? `<img class="infobox-img" src="${esc(box.img_src)}" alt="" loading="lazy">` : ''}
+          <div>
+            <div class="infobox-title">${esc(box.infobox)}</div>
+            <div class="engine-badge" style="margin-top:4px">${esc(box.engine)}</div>
+          </div>
+        </div>
+        ${box.content ? `<div class="infobox-content">${esc(box.content)}</div>` : ''}
+        ${box.urls?.length ? `<div class="infobox-links">${box.urls.map(u => `<a class="infobox-link" href="${esc(u.url)}" target="_blank">${esc(u.title)}</a>`).join('')}</div>` : ''}
+      `;
+      return card;
+    }
+
+    // -- Academic card --
+    function renderAcademic(r) {
+      const card = document.createElement('div');
+      card.className = 'academic-card';
+
+      const authors = r.authors?.length ? r.authors.join(', ') : '';
+      const venue = [r.journal, r.publisher].filter(Boolean).join(' / ');
+      const tags = r.tags || [];
+
+      card.innerHTML = `
+        <a class="result-title" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>
+        ${authors ? `<div class="academic-authors">${esc(authors)}</div>` : ''}
+        ${venue ? `<div class="academic-venue">${esc(venue)}</div>` : ''}
+        ${r.content ? `<div class="result-snippet">${esc(r.content)}</div>` : ''}
+        <div class="result-meta">
+          ${(r.engines || []).map(e => `<span class="engine-badge">${esc(e)}</span>`).join('')}
+          ${r.publishedDate ? `<span class="result-date">${formatDate(r.publishedDate)}</span>` : ''}
+          ${r.doi ? `<a class="doi-link" href="https://doi.org/${esc(r.doi)}" target="_blank">DOI</a>` : ''}
+          ${r.pdf_url ? `<a class="doi-link" href="${esc(r.pdf_url)}" target="_blank">PDF</a>` : ''}
+        </div>
+        ${tags.length ? `<div class="academic-tags">${tags.map(t => `<span class="academic-tag">${esc(t)}</span>`).join('')}</div>` : ''}
+      `;
+
+      const titleLink = card.querySelector('.result-title');
+      titleLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!isSplit) toggleSplit();
+        loadPaneURL('bottom', r.pdf_url || r.url);
+      });
+
+      return card;
+    }
+
+    // -- News card --
+    function renderNews(r) {
+      const card = renderGeneral(r);
+      // Add source highlight for news
+      if (r.source || r.metadata) {
+        const meta = card.querySelector('.result-meta');
+        const src = document.createElement('span');
+        src.className = 'result-date';
+        src.style.color = 'var(--sage)';
+        src.textContent = r.source || '';
+        meta.prepend(src);
+      }
+      return card;
+    }
+
+    // -- IT/Dev card (parse SO metadata) --
+    function renderITDev(r) {
+      const card = renderGeneral(r);
+      // Try to parse SO-style metadata from content
+      const soMatch = r.content?.match(/\[([^\]]+)\]\s*(.+?)\s*\/\/\s*(is answered|not answered)\s*\/\/\s*score:\s*(\d+)/i);
+      if (soMatch) {
+        const tags = soMatch[1].split(',').map(t => t.trim());
+        const answered = soMatch[3] === 'is answered';
+        const meta = card.querySelector('.result-meta');
+
+        // Add answered indicator
+        const ind = document.createElement('span');
+        ind.className = 'engine-badge';
+        ind.style.borderColor = answered ? 'var(--olive)' : 'var(--brown)';
+        ind.style.color = answered ? 'var(--olive)' : 'var(--brown)';
+        ind.textContent = answered ? 'answered' : 'unanswered';
+        meta.prepend(ind);
+      }
+      return card;
+    }
+
+    // -- Video card --
+    function renderVideo(r) {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.style.display = 'flex';
+      card.style.gap = '10px';
+
+      const thumb = r.thumbnail ? `<img src="${esc(r.thumbnail)}" style="width:120px;height:68px;object-fit:cover;border-radius:3px;flex-shrink:0;background:var(--panel)" loading="lazy">` : '';
+
+      card.innerHTML = `
+        ${thumb}
+        <div style="flex:1;min-width:0">
+          <a class="result-title" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>
+          <div class="result-url">${esc(r.author || '')}</div>
+          <div class="result-meta">
+            ${r.length ? `<span class="engine-badge">${esc(r.length)}</span>` : ''}
+            ${r.publishedDate ? `<span class="result-date">${formatDate(r.publishedDate)}</span>` : ''}
+            ${(r.engines || []).map(e => `<span class="engine-badge">${esc(e)}</span>`).join('')}
+          </div>
+        </div>
+      `;
+
+      const titleLink = card.querySelector('.result-title');
+      titleLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!isSplit) toggleSplit();
+        // Use iframe_src for embeddable, fallback to url
+        loadPaneURL('bottom', r.iframe_src || r.url);
+      });
+
+      return card;
+    }
+
+    // -- Image grid --
+    function renderImageGrid(results) {
+      const grid = document.createElement('div');
+      grid.className = 'image-grid';
+
+      for (const r of results.slice(0, 60)) {
+        const cell = document.createElement('div');
+        cell.className = 'image-cell';
+        cell.innerHTML = `
+          <img src="${esc(r.thumbnail_src || r.img_src)}" alt="${esc(r.title)}" loading="lazy">
+          <div class="image-overlay">
+            <div class="image-meta">${esc(r.resolution || '')} ${esc(r.img_format || '')}</div>
+          </div>
+        `;
+        cell.onclick = () => {
+          if (!isSplit) toggleSplit();
+          loadPaneURL('bottom', r.url);
+        };
+        grid.appendChild(cell);
+      }
+      return grid;
+    }
+
+    // ========================================
+    // VIZ OVERLAY (Option key X-ray vision)
+    // ========================================
+    function updateVizData() {
+      // Prepare engine agreement data from general results
+      const overlay = document.getElementById('viz-overlay');
+      const data = searchResults['general'];
+      if (!data?.results?.length) return;
+
+      // Build engine agreement visualization (plain HTML for now, Observable Plot in Phase 4)
+      const results = data.results.filter(r => r.engines?.length);
+      if (!results.length) return;
+
+      // Get all unique engines
+      const allEngines = [...new Set(results.flatMap(r => r.engines))].sort();
+
+      let html = `
+        <div class="viz-mode-bar">
+          <button class="viz-mode-btn active">Engine Agreement</button>
+          <button class="viz-mode-btn">Source Distribution</button>
+          <button class="pin-btn${vizPinned ? ' pinned' : ''}" onclick="togglePin()">
+            ${vizPinned ? 'Unpin' : 'Pin'}
+          </button>
+        </div>
+        <div style="font-size:0.65rem;color:var(--muted-txt);margin-bottom:8px">
+          ${results.length} results across ${allEngines.length} engines
+        </div>
+      `;
+
+      // Engine agreement strip chart (ASCII/HTML version)
+      // Each row = a result, columns = engines, dot if engine found it
+      html += '<div style="overflow-x:auto">';
+      html += '<table style="border-collapse:collapse;width:100%;font-size:0.55rem">';
+      html += '<tr><th style="text-align:left;padding:2px 6px;color:var(--muted-bg);min-width:200px">Result</th>';
+      for (const eng of allEngines) {
+        html += `<th style="padding:2px 4px;color:var(--muted-bg);text-align:center;writing-mode:vertical-rl;height:60px">${esc(eng)}</th>`;
+      }
+      html += '<th style="padding:2px 4px;color:var(--muted-bg)">Score</th></tr>';
+
+      // Top 25 results by score
+      const top = results.slice(0, 25);
+      for (const r of top) {
+        const isUnique = r.engines.length === 1;
+        html += `<tr style="border-bottom:1px solid var(--border)">`;
+        html += `<td style="padding:3px 6px;color:${isUnique ? 'var(--rose)' : 'var(--bright)'};max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.title)}</td>`;
+        for (const eng of allEngines) {
+          const idx = r.engines.indexOf(eng);
+          if (idx >= 0) {
+            const pos = r.positions?.[idx] || '?';
+            html += `<td style="text-align:center;padding:2px"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--teal);line-height:14px;text-align:center;font-size:0.45rem;color:var(--bg)">${pos}</span></td>`;
+          } else {
+            html += `<td style="text-align:center;padding:2px;color:var(--border)">-</td>`;
+          }
+        }
+        html += `<td style="text-align:center;padding:2px;color:var(--muted-txt)">${r.score?.toFixed(1) || ''}</td>`;
+        html += '</tr>';
+      }
+      html += '</table></div>';
+
+      // Unique-engine finds section
+      const uniques = results.filter(r => r.engines.length === 1);
+      if (uniques.length) {
+        html += `<div style="margin-top:12px;font-size:0.65rem;color:var(--rose)">
+          ${uniques.length} unique finds (only 1 engine)
+        </div>`;
+        for (const r of uniques.slice(0, 10)) {
+          html += `<div style="font-size:0.6rem;padding:2px 6px;color:var(--text)">
+            <span class="engine-badge unique">${esc(r.engines[0])}</span>
+            ${esc(r.title)}
+          </div>`;
+        }
+      }
+
+      overlay.innerHTML = html;
+    }
+
+    function togglePin() {
+      vizPinned = !vizPinned;
+      const overlay = document.getElementById('viz-overlay');
+      if (vizPinned) {
+        overlay.classList.add('pinned');
+      } else if (!optionHeld) {
+        overlay.classList.remove('pinned', 'visible');
+      }
+      updateVizData(); // re-render pin button state
+    }
+
+    // Option key handling
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Alt' && !e.repeat) {
+        optionHeld = true;
+        const overlay = document.getElementById('viz-overlay');
+        overlay.classList.add('visible');
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'Alt') {
+        optionHeld = false;
+        if (!vizPinned) {
+          document.getElementById('viz-overlay').classList.remove('visible');
+        }
+      }
+    });
+
+    // ========================================
+    // IFRAME LOADING (preserved from original)
+    // ========================================
+    function loadPaneURL(pane, url) {
+      if (pane === 'top') {
+        // Top pane switches to iframe mode
+        hideResults();
+        const container = document.getElementById('frame-top');
+        let iframe = container.querySelector('iframe');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox');
+          container.appendChild(iframe);
+        }
+        iframe.style.display = 'block';
+        iframe.src = url;
+        searchBar.value = url;
+      } else {
+        const container = document.getElementById(`frame-${pane}`);
+        const input = container.parentElement.querySelector('.url-input');
+        if (input) input.value = url;
+
+        const empty = container.querySelector('.empty');
+        if (empty) empty.remove();
+
+        let iframe = container.querySelector('iframe');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox');
+          container.appendChild(iframe);
+        }
+        iframe.src = url;
+      }
     }
 
     function goPane(pane) {
@@ -198,41 +1183,347 @@
       let url = input.value.trim();
       if (!url) return;
       if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
-      loadPane(pane, url);
+      loadPaneURL(pane, url);
     }
 
-    function loadPane(pane, url) {
-      const input = document.querySelector(`.url-input[data-pane="${pane}"]`);
-      const container = document.getElementById(`frame-${pane}`);
-      input.value = url;
-
-      const empty = container.querySelector('.empty');
-      if (empty) empty.remove();
-
-      let iframe = container.querySelector('iframe');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox');
-        container.appendChild(iframe);
-      }
-      iframe.src = url;
+    function toggleSplit() {
+      isSplit = !isSplit;
+      document.getElementById('panes').className = isSplit ? 'panes split' : 'panes single';
+      document.getElementById('split-toggle').className = isSplit ? 'split-btn active' : 'split-btn';
     }
 
-    // Enter key in URL inputs
+    // ========================================
+    // HELPERS
+    // ========================================
+    function showLoading(active) {
+      document.getElementById('loading-bar').className = active ? 'loading-bar active' : 'loading-bar';
+    }
+
+    function hideEmpty() {
+      const el = document.getElementById('empty-state');
+      if (el) el.style.display = 'none';
+    }
+
+    function showResults() {
+      const rc = document.getElementById('results-container');
+      rc.style.display = 'block';
+      // Hide any iframe in top pane
+      const iframe = document.getElementById('frame-top').querySelector('iframe');
+      if (iframe) iframe.style.display = 'none';
+    }
+
+    function hideResults() {
+      document.getElementById('results-container').style.display = 'none';
+      document.getElementById('category-tabs').style.display = 'none';
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    function formatDate(dateStr) {
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 86400000) return 'today';
+        if (diff < 172800000) return 'yesterday';
+        if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+        if (diff < 2592000000) return `${Math.floor(diff / 604800000)}w ago`;
+        return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      } catch { return dateStr; }
+    }
+
+    // Enter key in bottom pane URL input
     document.querySelectorAll('.url-input').forEach(input => {
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') goPane(input.dataset.pane);
       });
     });
 
-    // Shortcuts — click loads into top pane, shift+click into bottom
+    // Shortcuts — click loads into top pane as URL, shift+click into bottom
     document.querySelectorAll('.shortcut').forEach(el => {
       el.addEventListener('click', (e) => {
         const pane = e.shiftKey ? 'bottom' : 'top';
         if (pane === 'bottom' && !isSplit) toggleSplit();
-        loadPane(pane, el.dataset.url);
+        loadPaneURL(pane, el.dataset.url);
       });
     });
+
+    // ========================================
+    // OBSERVABLE PLOT INTEGRATION (Phase 4)
+    // ========================================
+    let Plot = null;
+    let plotReady = false;
+
+    // Load Plot asynchronously — don't block page render
+    (async () => {
+      try {
+        Plot = await import('@observablehq/plot');
+        plotReady = true;
+        console.log('Observable Plot loaded');
+      } catch (err) {
+        console.warn('Observable Plot not available, falling back to HTML tables:', err);
+      }
+    })();
+
+    // Viz mode state
+    let vizMode = 'agreement'; // 'agreement' | 'sources' | 'timeline'
+
+    function updateVizDataPlot() {
+      if (!plotReady || !Plot) return updateVizData(); // fallback to HTML
+
+      const overlay = document.getElementById('viz-overlay');
+      const data = searchResults['general'];
+      const sciData = searchResults['science'];
+
+      overlay.innerHTML = '';
+
+      // Mode bar
+      const modeBar = document.createElement('div');
+      modeBar.className = 'viz-mode-bar';
+      const modes = [
+        { id: 'agreement', label: 'Engine Agreement' },
+        { id: 'sources', label: 'Source Distribution' },
+        { id: 'timeline', label: 'Timeline' },
+      ];
+      for (const m of modes) {
+        const btn = document.createElement('button');
+        btn.className = `viz-mode-btn${vizMode === m.id ? ' active' : ''}`;
+        btn.textContent = m.label;
+        btn.onclick = () => { vizMode = m.id; updateVizDataPlot(); };
+        modeBar.appendChild(btn);
+      }
+      const pinBtn = document.createElement('button');
+      pinBtn.className = `pin-btn${vizPinned ? ' pinned' : ''}`;
+      pinBtn.textContent = vizPinned ? 'Unpin' : 'Pin';
+      pinBtn.onclick = togglePin;
+      modeBar.appendChild(pinBtn);
+      overlay.appendChild(modeBar);
+
+      if (vizMode === 'agreement') renderAgreementPlot(overlay, data);
+      else if (vizMode === 'sources') renderSourcesPlot(overlay, data);
+      else if (vizMode === 'timeline') renderTimelinePlot(overlay, sciData || data);
+    }
+
+    function renderAgreementPlot(container, data) {
+      if (!data?.results?.length) {
+        container.innerHTML += '<div class="empty">No results for agreement chart</div>';
+        return;
+      }
+
+      // Build flat data: one row per (result, engine) pair
+      const dots = [];
+      for (const r of data.results.slice(0, 30)) {
+        for (let i = 0; i < (r.engines || []).length; i++) {
+          dots.push({
+            title: r.title?.slice(0, 40) || 'untitled',
+            engine: r.engines[i],
+            position: r.positions?.[i] || 0,
+            score: r.score || 0,
+            unique: r.engines.length === 1,
+          });
+        }
+      }
+
+      if (!dots.length) return;
+
+      try {
+        const chart = Plot.plot({
+          width: container.clientWidth - 24,
+          height: Math.min(400, dots.length * 12 + 60),
+          marginLeft: 160,
+          marginBottom: 60,
+          style: { background: 'var(--bg)', color: 'var(--text)', fontSize: '10px' },
+          x: {
+            label: 'Engine',
+            tickRotate: -45,
+          },
+          y: {
+            label: null,
+            domain: [...new Set(dots.map(d => d.title))],
+          },
+          color: {
+            domain: [false, true],
+            range: ['var(--teal)', 'var(--rose)'],
+          },
+          marks: [
+            Plot.dot(dots, {
+              x: 'engine',
+              y: 'title',
+              fill: 'unique',
+              r: d => Math.max(3, Math.min(8, d.score)),
+              title: d => `${d.engine} #${d.position} (score: ${d.score.toFixed(1)})`,
+              tip: true,
+            }),
+            Plot.ruleY(dots, Plot.groupY({ x1: 'min', x2: 'max' }, {
+              y: 'title',
+              x: 'engine',
+              stroke: 'var(--border)',
+              strokeWidth: 0.5,
+            })),
+          ],
+        });
+        container.appendChild(chart);
+      } catch (err) {
+        console.error('Plot error:', err);
+        updateVizData(); // fallback
+      }
+
+      // Unique finds summary
+      const uniques = data.results.filter(r => r.engines?.length === 1);
+      if (uniques.length) {
+        const info = document.createElement('div');
+        info.style.cssText = 'margin-top:10px;font-size:0.65rem;color:var(--rose)';
+        info.textContent = `${uniques.length} unique finds (single-engine results)`;
+        container.appendChild(info);
+      }
+    }
+
+    function renderSourcesPlot(container, data) {
+      if (!data?.results?.length) return;
+
+      // Count results per engine
+      const engineCounts = {};
+      for (const r of data.results) {
+        for (const e of (r.engines || [])) {
+          engineCounts[e] = (engineCounts[e] || 0) + 1;
+        }
+      }
+
+      const bars = Object.entries(engineCounts)
+        .map(([engine, count]) => ({ engine, count }))
+        .sort((a, b) => b.count - a.count);
+
+      try {
+        const chart = Plot.plot({
+          width: container.clientWidth - 24,
+          height: Math.max(200, bars.length * 24 + 40),
+          marginLeft: 120,
+          style: { background: 'var(--bg)', color: 'var(--text)', fontSize: '10px' },
+          x: { label: 'Results found' },
+          y: { label: null },
+          marks: [
+            Plot.barX(bars, {
+              x: 'count',
+              y: 'engine',
+              fill: 'var(--teal)',
+              sort: { y: '-x' },
+              tip: true,
+            }),
+            Plot.ruleX([0]),
+          ],
+        });
+        container.appendChild(chart);
+      } catch (err) {
+        console.error('Source plot error:', err);
+      }
+
+      // Domain distribution
+      const domainCounts = {};
+      for (const r of data.results) {
+        const domain = r.parsed_url?.[1] || new URL(r.url).hostname;
+        domainCounts[domain] = (domainCounts[domain] || 0) + 1;
+      }
+
+      const topDomains = Object.entries(domainCounts)
+        .map(([domain, count]) => ({ domain, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15);
+
+      if (topDomains.length) {
+        const label = document.createElement('div');
+        label.style.cssText = 'margin-top:12px;font-size:0.65rem;color:var(--muted-txt);margin-bottom:4px';
+        label.textContent = 'Top domains';
+        container.appendChild(label);
+
+        try {
+          const chart2 = Plot.plot({
+            width: container.clientWidth - 24,
+            height: Math.max(150, topDomains.length * 20 + 30),
+            marginLeft: 160,
+            style: { background: 'var(--bg)', color: 'var(--text)', fontSize: '10px' },
+            x: { label: 'Results' },
+            y: { label: null },
+            marks: [
+              Plot.barX(topDomains, {
+                x: 'count',
+                y: 'domain',
+                fill: 'var(--sage)',
+                sort: { y: '-x' },
+                tip: true,
+              }),
+              Plot.ruleX([0]),
+            ],
+          });
+          container.appendChild(chart2);
+        } catch (err) {
+          console.error('Domain plot error:', err);
+        }
+      }
+    }
+
+    function renderTimelinePlot(container, data) {
+      if (!data?.results?.length) return;
+
+      const temporal = data.results
+        .filter(r => r.publishedDate)
+        .map(r => ({
+          date: new Date(r.publishedDate),
+          title: r.title?.slice(0, 50) || 'untitled',
+          engine: r.engines?.[0] || 'unknown',
+          score: r.score || 0,
+          isAcademic: r.template === 'paper.html',
+          journal: r.journal || '',
+        }))
+        .filter(d => !isNaN(d.date.getTime()));
+
+      if (!temporal.length) {
+        const msg = document.createElement('div');
+        msg.className = 'empty';
+        msg.textContent = 'No dated results for timeline';
+        container.appendChild(msg);
+        return;
+      }
+
+      try {
+        const chart = Plot.plot({
+          width: container.clientWidth - 24,
+          height: 300,
+          marginBottom: 40,
+          style: { background: 'var(--bg)', color: 'var(--text)', fontSize: '10px' },
+          x: { label: 'Published', type: 'time' },
+          y: { label: null },
+          marks: [
+            Plot.dot(temporal, {
+              x: 'date',
+              y: 'engine',
+              r: d => Math.max(3, Math.min(10, d.score * 2)),
+              fill: d => d.isAcademic ? 'var(--purple)' : 'var(--teal)',
+              title: d => `${d.title}\n${d.date.toLocaleDateString()}${d.journal ? '\n' + d.journal : ''}`,
+              tip: true,
+            }),
+          ],
+        });
+        container.appendChild(chart);
+      } catch (err) {
+        console.error('Timeline plot error:', err);
+      }
+    }
+
+    // Override the original updateVizData to use Plot when available
+    const _origUpdateViz = updateVizData;
+    updateVizData = function() {
+      if (plotReady && Plot) {
+        updateVizDataPlot();
+      } else {
+        _origUpdateViz();
+      }
+    };
   </script>
 </body>
 </html>
