@@ -58,14 +58,27 @@
 			const raw = await invoke('searxng_search', {
 				query: q,
 				categories: cats
-			});
-			return JSON.parse(raw as string);
+			}) as string;
+			if (raw.trimStart().startsWith('<')) {
+				throw new Error('Search returned auth page — SearXNG bypass not configured');
+			}
+			try {
+				return JSON.parse(raw);
+			} catch {
+				throw new Error(`Invalid JSON from SearXNG: ${raw.slice(0, 100)}`);
+			}
 		}
-		// Fallback: direct fetch (won't work if behind auth, but useful for dev)
 		const resp = await fetch(
 			`https://search.schrodingers.lol/search?q=${encodeURIComponent(q)}&format=json&categories=${cats}`
 		);
-		return resp.json();
+		if (!resp.ok) {
+			throw new Error(`Search failed: ${resp.status}`);
+		}
+		const text = await resp.text();
+		if (text.trimStart().startsWith('<')) {
+			throw new Error('Search returned auth page instead of JSON');
+		}
+		return JSON.parse(text);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
