@@ -1,7 +1,4 @@
-// @ts-expect-error defined in vite.config.ts
-export const IS_NAVIGATOR_BUILD: boolean = IS_NAVIGATOR;
-
-export const APP_NAME = IS_NAVIGATOR_BUILD ? 'Dora' : 'Open WebUI';
+export const APP_NAME = 'dora';
 
 // @ts-expect-error defined in vite.config.ts
 export const WEBUI_VERSION = APP_VERSION;

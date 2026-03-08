@@ -12,7 +12,7 @@
 	import { getTools } from '$lib/apis/tools';
 	import { getUserSettings } from '$lib/apis/users';
 
-	import { IS_TAURI, WEBUI_VERSION } from '$lib/constants';
+	import { WEBUI_VERSION } from '$lib/constants';
 	import { compareVersion } from '$lib/utils';
 
 	import {
@@ -169,14 +169,6 @@
 					}, 0);
 				}
 
-				// Check if Ctrl/Cmd + Shift + N is pressed (toggle navigator sidecar)
-				if (isCtrlPressed && isShiftPressed && event.key.toLowerCase() === 'n') {
-					event.preventDefault();
-					if (IS_TAURI) {
-						const { toggleNavigator } = await import('$lib/app/commands/open-navigator');
-						await toggleNavigator();
-					}
-				}
 			});
 
 			if ($user.role === 'admin' && ($settings?.showChangelog ?? true)) {
