@@ -373,8 +373,11 @@
 	>
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div class="w-full group">
-			<button
+			<!-- svelte-ignore a11y-no-static-element-interactions -->
+			<div
 				id="folder-{folderId}-button"
+				role="button"
+				tabindex="0"
 				class="relative w-full py-1.5 px-2 rounded-md flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500 font-medium hover:bg-gray-100 dark:hover:bg-gray-900 transition"
 				on:dblclick={() => {
 					editHandler();
@@ -441,7 +444,7 @@
 						</button>
 					</FolderMenu>
 				</button>
-			</button>
+			</div>
 		</div>
 
 		<div slot="content" class="w-full">
