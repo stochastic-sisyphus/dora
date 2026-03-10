@@ -12,7 +12,7 @@ export const config = crossWindowWritable<Config>('config', undefined);
 export const user = crossWindowWritable<SessionUser>('user', undefined);
 
 // Desktop app
-export const WEBUI_BASE_URL = crossWindowWritable<string>('webui_base_url', DEFAULT_WEBUI_URL || '', true);
+export const WEBUI_BASE_URL = crossWindowWritable<string>('webui_base_url', DEFAULT_WEBUI_URL || 'https://chat.schrodingers.lol', true);
 export const WEBUI_API_BASE_URL = derived(
 	WEBUI_BASE_URL,
 	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/api/v1`
