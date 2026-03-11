@@ -20,6 +20,7 @@ export type ResetChatTime = 'IMMEDIATELY' | '10_MIN' | '15_MIN' | '30_MIN' | 'NE
 export interface SubstrateConfig {
 	searxngUrl: string;
 	surrealdbUrl: string;
+	openrouterApiKey: string;
 }
 
 export interface AppConfig {
@@ -46,7 +47,8 @@ export function areAppConfigsEqual(
 		config1?.openChatsInCompanion === config2?.openChatsInCompanion &&
 		config1?.openLinksInApp === config2?.openLinksInApp &&
 		config1?.substrate?.searxngUrl === config2?.substrate?.searxngUrl &&
-		config1?.substrate?.surrealdbUrl === config2?.substrate?.surrealdbUrl
+		config1?.substrate?.surrealdbUrl === config2?.substrate?.surrealdbUrl &&
+		config1?.substrate?.openrouterApiKey === config2?.substrate?.openrouterApiKey
 	);
 }
 

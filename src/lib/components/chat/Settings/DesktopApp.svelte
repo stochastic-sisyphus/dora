@@ -71,6 +71,8 @@
 	let openLinksInApp: boolean;
 	const openLinksInAppChangeHandler = () => {};
 
+	let openrouterApiKey = '';
+
 	let showConfirmDialog = false;
 
 	const webUIBaseURLChangeHandler = async () => {
@@ -118,7 +120,8 @@
 			chatBarPositionPreference: positionOnScreen,
 			resetChatTimePreference: resetToNewChat,
 			openChatsInCompanion: openNewChatsInCompanion === 'true',
-			openLinksInApp
+			openLinksInApp,
+			substrate: { ...$appConfig.substrate, openrouterApiKey }
 		};
 
 		console.debug('After:', $appConfig);
@@ -132,6 +135,7 @@
 		openNewChatsInCompanion = $appConfig.openChatsInCompanion ? 'true' : 'false';
 		launchAtLogin = await autoStart.isEnabled();
 		openLinksInApp = $appConfig.openLinksInApp;
+		openrouterApiKey = $appConfig?.substrate?.openrouterApiKey ?? '';
 	});
 </script>
 
@@ -220,6 +224,25 @@
 			<div class="flex items-center relative">
 				<div class="mt-1">
 					<Switch bind:state={launchAtLogin} on:change={launchAtLoginChangeHandler} />
+				</div>
+			</div>
+		</div>
+
+		<hr class=" dark:border-gray-850 my-3" />
+
+		<div class="">
+			<div class=" mb-1 text-sm font-medium">{$i18n.t('Substrate Settings')}</div>
+
+			<div>
+				<div class="text-sm font-medium mb-1">{$i18n.t('OpenRouter API Key')}</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="password"
+					placeholder="sk-or-..."
+					bind:value={openrouterApiKey}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					{$i18n.t('Used for structured extraction in the research panel.')}
 				</div>
 			</div>
 		</div>

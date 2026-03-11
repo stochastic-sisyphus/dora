@@ -14,6 +14,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             sidecar::searxng_search,
+            sidecar::extract_research,
         ]);
 
     builder

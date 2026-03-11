@@ -1,11 +1,15 @@
 <script lang="ts">
-	import { searchSearXNG } from '$lib/app/sidecar';
+	import { searchSearXNG, extractResearch, type ResearchExtraction } from '$lib/app/sidecar';
 	import { appConfig } from '$lib/stores';
 
 	let searchQuery = '';
 	let searchResults: any[] = [];
 	let searchLoading = false;
 	let searchError = '';
+
+	let extraction: ResearchExtraction | null = null;
+	let extractionLoading = false;
+	let extractionError = '';
 
 	async function handleSearch(): Promise<void> {
 		if (!searchQuery.trim()) return;
@@ -21,6 +25,30 @@
 			searchError = err instanceof Error ? err.message : String(err);
 		} finally {
 			searchLoading = false;
+		}
+	}
+
+	async function handleExtract(): Promise<void> {
+		extractionLoading = true;
+		extractionError = '';
+		extraction = null;
+		const apiKey = $appConfig?.substrate?.openrouterApiKey ?? '';
+		if (!apiKey) {
+			extractionError = 'OpenRouter API key not set. Add it in Desktop App settings.';
+			extractionLoading = false;
+			return;
+		}
+		let content = searchResults
+			.slice(0, 10)
+			.map((r: any) => `Source: ${r.url}\nTitle: ${r.title}\n${r.content ?? ''}`)
+			.join('\n\n---\n\n');
+		if (content.length > 30000) content = content.slice(0, 30000) + '\n\n[truncated]';
+		try {
+			extraction = await extractResearch(content, apiKey);
+		} catch (err) {
+			extractionError = err instanceof Error ? err.message : String(err);
+		} finally {
+			extractionLoading = false;
 		}
 	}
 </script>
@@ -47,6 +75,21 @@
 				</button>
 			</div>
 
+			{#if searchResults.length > 0}
+				<div class="extract-bar">
+					<button
+						class="btn"
+						on:click={handleExtract}
+						disabled={extractionLoading}
+					>
+						{extractionLoading ? 'Extracting...' : 'Extract insights'}
+					</button>
+					{#if extractionError}
+						<span class="error-inline">{extractionError}</span>
+					{/if}
+				</div>
+			{/if}
+
 			{#if searchError}
 				<div class="error-msg">{searchError}</div>
 			{/if}
@@ -68,6 +111,64 @@
 					<p class="empty-state">Enter a query and click Search.</p>
 				{/if}
 			</div>
+
+			{#if extraction}
+				<div class="extraction-panel">
+					<div class="extraction-header">
+						<h2>{extraction.topic}</h2>
+						<span class="quality-badge quality-{extraction.search_quality}">
+							{extraction.search_quality}
+						</span>
+					</div>
+
+					<div class="extraction-section">
+						<h3>Consensus</h3>
+						<p>{extraction.consensus}</p>
+					</div>
+
+					{#if extraction.key_claims.length > 0}
+						<div class="extraction-section">
+							<h3>Key Claims</h3>
+							{#each extraction.key_claims as claim}
+								<div class="claim-card">
+									<div class="claim-statement">{claim.statement}</div>
+									<div class="claim-meta">
+										<span class="confidence confidence-{claim.confidence}">{claim.confidence}</span>
+										<a href={claim.source_url} target="_blank" rel="noopener" class="claim-source">{claim.source_url}</a>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					{#if extraction.contradictions.length > 0}
+						<div class="extraction-section">
+							<h3>Contradictions</h3>
+							{#each extraction.contradictions as c}
+								<div class="contradiction-card">
+									<div class="contradiction-claims">
+										<span class="contra-a">{c.claim_a}</span>
+										<span class="contra-vs">vs</span>
+										<span class="contra-b">{c.claim_b}</span>
+									</div>
+									<div class="contra-note">{c.note}</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					{#if extraction.knowledge_gaps.length > 0}
+						<div class="extraction-section">
+							<h3>Knowledge Gaps</h3>
+							<ul class="gaps-list">
+								{#each extraction.knowledge_gaps as gap}
+									<li>{gap}</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</main>
 </div>
@@ -236,6 +337,155 @@
 		text-align: center;
 		padding: 32px 16px;
 		font-size: 0.9rem;
+	}
+
+	/* Extract bar */
+	.extract-bar {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	.error-inline {
+		color: #e8a0a0;
+		font-size: 0.8rem;
+	}
+
+	/* Extraction panel */
+	.extraction-panel {
+		margin-top: 24px;
+		border-top: 1px solid var(--border);
+		padding-top: 20px;
+	}
+
+	.extraction-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	.extraction-header h2 {
+		font-family: 'EB Garamond', Georgia, serif;
+		font-size: 1.3rem;
+		color: var(--bright);
+		margin: 0;
+	}
+
+	.quality-badge {
+		font-size: 0.7rem;
+		padding: 2px 8px;
+		border-radius: 10px;
+		text-transform: uppercase;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+	}
+
+	.quality-rich { background: var(--accent1); color: var(--bg); }
+	.quality-sparse { background: var(--muted-bg); color: var(--bright); }
+	.quality-off_topic { background: #4a2020; color: #e8a0a0; }
+
+	.extraction-section {
+		margin-bottom: 16px;
+	}
+
+	.extraction-section h3 {
+		font-family: 'EB Garamond', Georgia, serif;
+		color: var(--muted-txt);
+		margin: 0 0 8px 0;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.8rem;
+	}
+
+	.extraction-section p {
+		margin: 0;
+		line-height: 1.6;
+	}
+
+	.claim-card {
+		background: var(--panel);
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 10px 14px;
+		margin-bottom: 8px;
+	}
+
+	.claim-statement {
+		font-size: 0.9rem;
+		margin-bottom: 6px;
+	}
+
+	.claim-meta {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 0.75rem;
+	}
+
+	.confidence {
+		padding: 1px 6px;
+		border-radius: 4px;
+		font-weight: 600;
+		text-transform: uppercase;
+		font-size: 0.65rem;
+	}
+
+	.confidence-high { background: var(--accent1); color: var(--bg); }
+	.confidence-medium { background: var(--accent2); color: var(--bg); }
+	.confidence-low { background: var(--muted-bg); color: var(--bright); }
+
+	.claim-source {
+		color: var(--muted-txt);
+		text-decoration: none;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 300px;
+	}
+
+	.claim-source:hover { text-decoration: underline; }
+
+	.contradiction-card {
+		background: var(--panel);
+		border: 1px solid var(--border);
+		border-left: 3px solid #e8a0a0;
+		border-radius: 6px;
+		padding: 10px 14px;
+		margin-bottom: 8px;
+	}
+
+	.contradiction-claims {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		margin-bottom: 6px;
+		font-size: 0.85rem;
+	}
+
+	.contra-vs {
+		color: var(--muted-txt);
+		font-style: italic;
+		font-size: 0.75rem;
+	}
+
+	.contra-note {
+		font-size: 0.8rem;
+		color: var(--muted-txt);
+		font-style: italic;
+	}
+
+	.gaps-list {
+		margin: 0;
+		padding-left: 20px;
+	}
+
+	.gaps-list li {
+		font-size: 0.85rem;
+		margin-bottom: 4px;
+		line-height: 1.5;
 	}
 
 	/* Scrollbar styling */
