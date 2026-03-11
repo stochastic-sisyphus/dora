@@ -13,13 +13,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
-            sidecar::run_fabric,
-            sidecar::inquiry_list,
-            sidecar::inquiry_ask,
-            sidecar::inquiry_show,
-            sidecar::inquiry_dig,
             sidecar::searxng_search,
-            sidecar::list_fabric_patterns,
         ]);
 
     builder
