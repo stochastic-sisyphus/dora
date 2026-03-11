@@ -1,3 +1,5 @@
+import type { Event } from '@tauri-apps/api/event';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Window } from '@tauri-apps/api/window';
 
 /**
@@ -13,15 +15,29 @@ export default async function openNavigator(): Promise<void> {
 		return;
 	}
 
-	const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-	new WebviewWindow('navigator', {
-		url: '/research',
-		title: 'Research',
-		width: 1200,
-		height: 800,
-		titleBarStyle: 'Overlay',
-		hiddenTitle: true,
-		resizable: true,
-		minimizable: true
+	return new Promise<void>((resolve, reject) => {
+		try {
+			const window = new WebviewWindow('navigator', {
+				url: '/research',
+				title: 'Research',
+				width: 1200,
+				height: 800,
+				titleBarStyle: 'Overlay',
+				hiddenTitle: true,
+				resizable: true,
+				minimizable: true
+			});
+			window.once('tauri://window-created', (event: Event<unknown>) => {
+				console.debug('Navigator window created:', event);
+				resolve();
+			});
+			window.once('tauri://error', (event: Event<unknown>) => {
+				console.error('Error creating navigator window:', event);
+				reject(event.payload);
+			});
+		} catch (e) {
+			console.error('Error creating navigator window:', e);
+			reject(e);
+		}
 	});
 }
