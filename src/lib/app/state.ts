@@ -17,6 +17,11 @@ export function areAppStatesEqual(
 export type ChatBarPosition = 'BOTTOM_CENTER' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'REMEMBER_LAST';
 export type ResetChatTime = 'IMMEDIATELY' | '10_MIN' | '15_MIN' | '30_MIN' | 'NEVER';
 
+export interface SubstrateConfig {
+	searxngUrl: string;
+	surrealdbUrl: string;
+}
+
 export interface AppConfig {
 	shortcut: string;
 	webuiBaseUrl: string;
@@ -25,6 +30,7 @@ export interface AppConfig {
 	resetChatTimePreference: ResetChatTime;
 	openChatsInCompanion: boolean;
 	openLinksInApp: boolean;
+	substrate: SubstrateConfig;
 }
 
 export function areAppConfigsEqual(
@@ -38,7 +44,9 @@ export function areAppConfigsEqual(
 		config1?.chatBarPositionPreference === config2?.chatBarPositionPreference &&
 		config1?.resetChatTimePreference === config2?.resetChatTimePreference &&
 		config1?.openChatsInCompanion === config2?.openChatsInCompanion &&
-		config1?.openLinksInApp === config2?.openLinksInApp
+		config1?.openLinksInApp === config2?.openLinksInApp &&
+		config1?.substrate?.searxngUrl === config2?.substrate?.searxngUrl &&
+		config1?.substrate?.surrealdbUrl === config2?.substrate?.surrealdbUrl
 	);
 }
 

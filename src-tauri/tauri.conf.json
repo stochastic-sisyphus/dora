@@ -42,6 +42,18 @@
 				"minimizable": false,
 				"dragDropEnabled": true,
 				"devtools": true
+			},
+			{
+				"label": "navigator",
+				"title": "Research",
+				"url": "/research",
+				"width": 1200,
+				"height": 800,
+				"visible": false,
+				"titleBarStyle": "Overlay",
+				"hiddenTitle": true,
+				"resizable": true,
+				"minimizable": true
 			}
 		],
 		"security": {

@@ -33,6 +33,7 @@
 	import { createNewFolder, getFolders, updateFolderParentIdById } from '$lib/apis/folders';
 	import { IS_TAURI_DESKTOP } from '$lib/constants';
 	import { WEBUI_BASE_URL } from '$lib/stores';
+	import openNavigator from '$lib/app/actions/open-navigator';
 	import { resolveResourceUrl } from '$lib/utils';
 
 	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
@@ -504,6 +505,37 @@
 						<div class=" self-center font-medium text-sm font-primary">{$i18n.t('Workspace')}</div>
 					</div>
 				</a>
+			</div>
+		{/if}
+
+		{#if IS_TAURI_DESKTOP}
+			<div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">
+				<button
+					class="flex-grow flex space-x-3 rounded-lg px-2 py-[7px] hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+					on:click={openNavigator}
+				>
+					<div class="self-center">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2"
+							stroke="currentColor"
+							class="size-[1.1rem]"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+							/>
+						</svg>
+					</div>
+					<div class="flex self-center">
+						<div class="self-center font-medium text-sm font-primary">
+							{$i18n.t('Research')}
+						</div>
+					</div>
+				</button>
 			</div>
 		{/if}
 
