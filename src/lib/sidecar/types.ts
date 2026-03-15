@@ -1,7 +1,7 @@
 /**
  * Universal Sidecar Types
  * 
- * The sidecar works standalone or connected to a ledger.
+ * The sidecar works standalone or connected to any ledger backend.
  * Configuration is optional and independent from Chat UI config.
  */
 
@@ -14,7 +14,7 @@ export interface SidecarConfig {
     llmEndpoint?: LLMEndpoint;
     
     // Ledger connection (optional persistence)
-    // SQLite for local, PostgreSQL for shared, Temporal for workflows
+    // Universal - works with any backend implementing the ledger protocol
     ledger?: LedgerConfig;
     
     // Webhook for notifications (optional)
@@ -39,13 +39,32 @@ export interface LLMEndpoint {
     systemPrompt?: string;
 }
 
-// Ledger configuration (optional persistence)
+// Ledger configuration - universal, backend-agnostic
 export interface LedgerConfig {
-    // SQLite: local, file-based, no server needed (default)
-    // PostgreSQL: shared, multi-user, requires server
-    // Custom: any backend implementing the ledger protocol
-    type: 'sqlite' | 'postgres' | 'custom';
-    connection: string;  // File path for SQLite, connection string for others
+    // Backend type identifier (for adapter selection)
+    // Examples: 'sqlite', 'postgres', 'temporal', 'custom-adapter-name'
+    type: string;
+    
+    // Connection string or endpoint
+    // Examples:
+    //   - SQLite: "file:///path/to/ledger.db"
+    //   - PostgreSQL: "postgresql://user:pass@host:5432/dbname"
+    //   - HTTP API: "https://ledger.example.com/api"
+    //   - gRPC: "grpc://ledger.example.com:50051"
+    connection: string;
+    
+    // Optional adapter-specific configuration
+    adapterConfig?: Record<string, any>;
+    
+    // Optional authentication
+    auth?: {
+        type: 'bearer' | 'basic' | 'apikey' | 'custom';
+        token?: string;
+        username?: string;
+        password?: string;
+        apiKey?: string;
+        headers?: Record<string, string>;
+    };
 }
 
 // Webhook configuration
@@ -134,4 +153,12 @@ export interface SidecarResponse {
     type: 'results' | 'error' | 'logged' | 'rendered';
     data?: any;
     error?: string;
+}
+
+// Ledger adapter interface - any backend can implement this
+export interface LedgerAdapter {
+    connect(config: LedgerConfig): Promise<void>;
+    append(entry: LedgerEntry): Promise<string>;
+    query(region: RegionQuery): Promise<LedgerEntry[]>;
+    close(): Promise<void>;
 }

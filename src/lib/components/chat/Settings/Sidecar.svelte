@@ -1,6 +1,6 @@
 <script lang="ts">
     import { sidecarConfig } from '$lib/sidecar/config';
-    import type { SidecarConfig, SearchEndpoint, LLMEndpoint, LedgerConfig } from '$lib/sidecar/types';
+    import type { SidecarConfig, LedgerConfig } from '$lib/sidecar/types';
     import { createEventDispatcher, onMount } from 'svelte';
 
     const dispatch = createEventDispatcher();
@@ -15,8 +15,14 @@
     let llmModel = '';
     let llmProvider: 'openai' | 'anthropic' | 'custom' = 'custom';
     
-    let ledgerType: 'temporal' | 'postgres' | 'sqlite' | 'custom' = 'custom';
+    // Universal ledger config
+    let ledgerType = '';
     let ledgerConnection = '';
+    let ledgerAuthType: 'none' | 'bearer' | 'basic' | 'apikey' | 'custom' = 'none';
+    let ledgerAuthToken = '';
+    let ledgerAuthUsername = '';
+    let ledgerAuthPassword = '';
+    let ledgerAuthApiKey = '';
     
     let webhookUrl = '';
 
@@ -37,6 +43,13 @@
         if (config?.ledger) {
             ledgerType = config.ledger.type;
             ledgerConnection = config.ledger.connection;
+            if (config.ledger.auth) {
+                ledgerAuthType = config.ledger.auth.type || 'none';
+                ledgerAuthToken = config.ledger.auth.token || '';
+                ledgerAuthUsername = config.ledger.auth.username || '';
+                ledgerAuthPassword = config.ledger.auth.password || '';
+                ledgerAuthApiKey = config.ledger.auth.apiKey || '';
+            }
         }
         if (config?.webhook) {
             webhookUrl = config.webhook.url;
@@ -66,12 +79,27 @@
             };
         }
         
-        // Save ledger if connection provided
-        if (ledgerConnection) {
-            config.ledger = {
+        // Save ledger if type provided
+        if (ledgerType && ledgerConnection) {
+            const ledger: LedgerConfig = {
                 type: ledgerType,
                 connection: ledgerConnection
             };
+            
+            // Add auth if configured
+            if (ledgerAuthType !== 'none') {
+                ledger.auth = { type: ledgerAuthType };
+                if (ledgerAuthType === 'bearer' && ledgerAuthToken) {
+                    ledger.auth.token = ledgerAuthToken;
+                } else if (ledgerAuthType === 'basic' && ledgerAuthUsername && ledgerAuthPassword) {
+                    ledger.auth.username = ledgerAuthUsername;
+                    ledger.auth.password = ledgerAuthPassword;
+                } else if (ledgerAuthType === 'apikey' && ledgerAuthApiKey) {
+                    ledger.auth.apiKey = ledgerAuthApiKey;
+                }
+            }
+            
+            config.ledger = ledger;
         }
         
         // Save webhook if URL provided
@@ -89,6 +117,7 @@
     const clearConfig = () => {
         searchUrl = '';
         llmUrl = '';
+        ledgerType = '';
         ledgerConnection = '';
         webhookUrl = '';
         $sidecarConfig = {};
@@ -101,7 +130,7 @@
     <div>
         <div class="text-sm font-medium mb-1">Sidecar Configuration</div>
         <div class="text-xs text-gray-500">
-            Configure the sidecar for universal search, extraction, and ledger logging.
+            Universal configuration for search, LLM, and ledger backends.
             All fields are optional - sidecar works without configuration.
         </div>
     </div>
@@ -118,7 +147,7 @@
                 placeholder="https://searx.be"
                 class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
             />
-            <p class="text-xs text-gray-500 mt-1">Any search API endpoint. Defaults to public SearXNG if unconfigured.</p>
+            <p class="text-xs text-gray-500 mt-1">Any search API endpoint.</p>
         </div>
         
         <div class="grid grid-cols-2 gap-4">
@@ -199,38 +228,93 @@
 
     <hr class="dark:border-gray-850 my-3" />
 
-    <!-- Ledger Connection -->
+    <!-- Universal Ledger -->
     <div class="space-y-3">
-        <div class="text-sm font-medium">Ledger Connection (optional)</div>
+        <div class="text-sm font-medium">Ledger Backend (optional)</div>
+        <p class="text-xs text-gray-500">
+            Any backend implementing the ledger protocol. SQLite, PostgreSQL, or custom adapters.
+        </p>
         
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs text-gray-500 mb-1">Type</label>
-                <select
+                <label class="block text-xs text-gray-500 mb-1">Backend Type</label>
+                <input
+                    type="text"
                     bind:value={ledgerType}
+                    placeholder="sqlite, postgres, custom-adapter"
                     class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
-                >
-                    <option value="temporal">Temporal</option>
-                    <option value="postgres">PostgreSQL</option>
-                    <option value="sqlite">SQLite</option>
-                    <option value="custom">Custom</option>
-                </select>
+                />
             </div>
             
             <div>
-                <label class="block text-xs text-gray-500 mb-1">Connection String</label>
+                <label class="block text-xs text-gray-500 mb-1">Connection</label>
                 <input
                     type="text"
                     bind:value={ledgerConnection}
-                    placeholder="postgresql://localhost:5432/ledger"
+                    placeholder="file:///path/to.db or postgresql://..."
                     class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
                 />
             </div>
         </div>
         
-        <p class="text-xs text-gray-500">
-            Optional persistence layer for findings and judgments. Sidecar works without a ledger.
-        </p>
+        <!-- Auth Configuration -->
+        <div class="border-t border-gray-200 dark:border-gray-800 pt-3">
+            <div class="text-xs font-medium mb-2">Authentication (optional)</div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Auth Type</label>
+                    <select
+                        bind:value={ledgerAuthType}
+                        class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+                    >
+                        <option value="none">None</option>
+                        <option value="bearer">Bearer Token</option>
+                        <option value="basic">Basic Auth</option>
+                        <option value="apikey">API Key</option>
+                        <option value="custom">Custom Headers</option>
+                    </select>
+                </div>
+                
+                {#if ledgerAuthType === 'bearer'}
+                    <div class="col-span-2">
+                        <label class="block text-xs text-gray-500 mb-1">Token</label>
+                        <input
+                            type="password"
+                            bind:value={ledgerAuthToken}
+                            placeholder="Bearer token"
+                            class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+                        />
+                    </div>
+                {:else if ledgerAuthType === 'basic'}
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Username</label>
+                        <input
+                            type="text"
+                            bind:value={ledgerAuthUsername}
+                            class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Password</label>
+                        <input
+                            type="password"
+                            bind:value={ledgerAuthPassword}
+                            class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+                        />
+                    </div>
+                {:else if ledgerAuthType === 'apikey'}
+                    <div class="col-span-2">
+                        <label class="block text-xs text-gray-500 mb-1">API Key</label>
+                        <input
+                            type="password"
+                            bind:value={ledgerAuthApiKey}
+                            class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+                        />
+                    </div>
+                {/if}
+            </div>
+        </div>
     </div>
 
     <hr class="dark:border-gray-850 my-3" />
