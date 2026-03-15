@@ -14,6 +14,7 @@ export interface SidecarConfig {
     llmEndpoint?: LLMEndpoint;
     
     // Ledger connection (optional persistence)
+    // SQLite for local, PostgreSQL for shared, Temporal for workflows
     ledger?: LedgerConfig;
     
     // Webhook for notifications (optional)
@@ -25,8 +26,8 @@ export interface SearchEndpoint {
     url: string;
     method?: 'GET' | 'POST';
     headers?: Record<string, string>;
-    bodyTemplate?: string;
-    responsePath?: string;
+    bodyTemplate?: string;  // Use {{query}} as placeholder
+    responsePath?: string;  // JSON path like "results" or "data.items"
 }
 
 // LLM endpoint configuration
@@ -40,8 +41,12 @@ export interface LLMEndpoint {
 
 // Ledger configuration (optional persistence)
 export interface LedgerConfig {
-    type: 'temporal' | 'postgres' | 'sqlite' | 'custom';
-    connection: string;
+    // SQLite: local, file-based, no server needed (default)
+    // PostgreSQL: shared, multi-user, requires server
+    // Temporal: workflow orchestration (uses PostgreSQL internally)
+    // Custom: any backend implementing the ledger protocol
+    type: 'sqlite' | 'postgres' | 'temporal' | 'custom';
+    connection: string;  // File path for SQLite, connection string for others
 }
 
 // Webhook configuration
@@ -51,15 +56,15 @@ export interface WebhookConfig {
     headers?: Record<string, string>;
 }
 
-// Ledger entry types
+// Ledger entry types (the atoms)
 export type LedgerEntryType = 'finding' | 'judgment' | 'observation' | 'artifact';
 
 export interface LedgerEntry {
     id: string;
     type: LedgerEntryType;
-    fields: Record<string, any>;
+    fields: Record<string, any>;  // Pydantic-shaped
     timestamp: number;
-    source: string;
+    source: string;  // Which entry plug
 }
 
 // Region query for view plugs
@@ -107,7 +112,7 @@ export interface Contradiction {
 export interface SearchResults {
     query: string;
     results: SearchResult[];
-    logged?: boolean;
+    logged?: boolean;  // Whether results were logged to ledger
 }
 
 export interface SearchResult {
@@ -117,7 +122,7 @@ export interface SearchResult {
     score?: number;
 }
 
-// IPC message types
+// IPC message types (stdin/stdout protocol)
 export interface SidecarRequest {
     id: string;
     type: 'search' | 'extract' | 'browse' | 'render' | 'log' | 'query';
