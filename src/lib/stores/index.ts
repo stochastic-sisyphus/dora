@@ -12,30 +12,30 @@ export const config = crossWindowWritable<Config>('config', undefined);
 export const user = crossWindowWritable<SessionUser>('user', undefined);
 
 // Desktop app
-export const WEBUI_BASE_URL = crossWindowWritable<string>('webui_base_url', DEFAULT_WEBUI_URL || '', true);
+export const COMPATIBLE_SERVER_URL = crossWindowWritable<string>('compatible_server_url', DEFAULT_WEBUI_URL || '', true);
 export const WEBUI_API_BASE_URL = derived(
-	WEBUI_BASE_URL,
-	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/api/v1`
+	COMPATIBLE_SERVER_URL,
+	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/api/v1`
 );
 export const OLLAMA_API_BASE_URL = derived(
-	WEBUI_BASE_URL,
-	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/ollama`
+	COMPATIBLE_SERVER_URL,
+	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/ollama`
 );
 export const OPENAI_API_BASE_URL = derived(
-	WEBUI_BASE_URL,
-	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/openai`
+	COMPATIBLE_SERVER_URL,
+	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/openai`
 );
 export const AUDIO_API_BASE_URL = derived(
-	WEBUI_BASE_URL,
-	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/audio/api/v1`
+	COMPATIBLE_SERVER_URL,
+	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/audio/api/v1`
 );
 export const IMAGES_API_BASE_URL = derived(
-	WEBUI_BASE_URL,
-	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/images/api/v1`
+	COMPATIBLE_SERVER_URL,
+	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/images/api/v1`
 );
 export const RETRIEVAL_API_BASE_URL = derived(
-	WEBUI_BASE_URL,
-	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/retrieval/api/v1`
+	COMPATIBLE_SERVER_URL,
+	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/retrieval/api/v1`
 );
 
 // Frontend
