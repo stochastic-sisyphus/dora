@@ -43,7 +43,7 @@
 			<div class=" text-lg font-medium self-center font-primary">
 				{$i18n.t('Add User Group')}
 			</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;

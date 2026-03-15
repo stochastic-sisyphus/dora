@@ -12,30 +12,35 @@ export const config = crossWindowWritable<Config>('config', undefined);
 export const user = crossWindowWritable<SessionUser>('user', undefined);
 
 // Desktop app
-export const COMPATIBLE_SERVER_URL = crossWindowWritable<string>('compatible_server_url', DEFAULT_WEBUI_URL || '', true);
+export const WEBUI_BASE_URL = crossWindowWritable<string>(
+	'compatible_server_url',
+	DEFAULT_CONFIG.webuiBaseUrl || '',
+	true
+);
+export const COMPATIBLE_SERVER_URL = WEBUI_BASE_URL;
 export const WEBUI_API_BASE_URL = derived(
-	COMPATIBLE_SERVER_URL,
-	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/api/v1`
+	WEBUI_BASE_URL,
+	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/api/v1`
 );
 export const OLLAMA_API_BASE_URL = derived(
-	COMPATIBLE_SERVER_URL,
-	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/ollama`
+	WEBUI_BASE_URL,
+	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/ollama`
 );
 export const OPENAI_API_BASE_URL = derived(
-	COMPATIBLE_SERVER_URL,
-	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/openai`
+	WEBUI_BASE_URL,
+	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/openai`
 );
 export const AUDIO_API_BASE_URL = derived(
-	COMPATIBLE_SERVER_URL,
-	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/audio/api/v1`
+	WEBUI_BASE_URL,
+	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/audio/api/v1`
 );
 export const IMAGES_API_BASE_URL = derived(
-	COMPATIBLE_SERVER_URL,
-	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/images/api/v1`
+	WEBUI_BASE_URL,
+	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/images/api/v1`
 );
 export const RETRIEVAL_API_BASE_URL = derived(
-	COMPATIBLE_SERVER_URL,
-	($COMPATIBLE_SERVER_URL) => `${$WEBUI_BASE_URL}/retrieval/api/v1`
+	WEBUI_BASE_URL,
+	($WEBUI_BASE_URL) => `${$WEBUI_BASE_URL}/retrieval/api/v1`
 );
 
 // Frontend
@@ -52,15 +57,15 @@ export const theme = crossWindowWritable<string>('theme', 'system');
 export const chatId = writable('');
 export const chatTitle = writable('');
 
-export const chats = crossWindowWritable<[]>('chats', []);
-export const pinnedChats = writable([]);
-export const tags = writable([]);
+export const chats = crossWindowWritable<any[]>('chats', []);
+export const pinnedChats = writable<any[]>([]);
+export const tags = writable<any[]>([]);
 
 export const models = crossWindowWritable<Model[]>('models', []);
 export const prompts = crossWindowWritable<Prompt[] | null>('prompts', null);
 export const knowledge = crossWindowWritable<Document[] | null>('knowledge', null);
-export const tools = crossWindowWritable<[] | null>('tools', null);
-export const functions = crossWindowWritable<[] | null>('functions', null);
+export const tools = crossWindowWritable<any[] | null>('tools', null);
+export const functions = crossWindowWritable<any[] | null>('functions', null);
 
 export const banners: Writable<Banner[]> = writable([]);
 
@@ -83,13 +88,16 @@ export const currentChatPage = writable(1);
 export const appState = crossWindowWritable('app_state', DEFAULT_STATE);
 export const appConfig = crossWindowWritable('app_config', DEFAULT_CONFIG, true);
 
-export type Model = OpenAIModel | OllamaModel;
+export type Model = OpenAIModel | OllamaModel | ArenaModel;
 
 type BaseModel = {
 	id: string;
 	name: string;
 	info?: ModelConfig;
 	owned_by: 'ollama' | 'openai' | 'arena';
+	preset?: boolean;
+	arena?: boolean;
+	[key: string]: any;
 };
 
 export interface OpenAIModel extends BaseModel {
@@ -124,6 +132,10 @@ export interface OllamaModel extends BaseModel {
 	};
 }
 
+export interface ArenaModel extends BaseModel {
+	owned_by: 'arena';
+}
+
 type OllamaModelDetails = {
 	parent_model: string;
 	format: string;
@@ -143,7 +155,17 @@ type Settings = {
 	notificationEnabled?: boolean;
 	title?: TitleSettings;
 	splitLargeDeltas?: boolean;
-	chatDirection: 'LTR' | 'RTL';
+	chatDirection?: 'LTR' | 'RTL' | 'ltr' | 'rtl' | 'auto';
+	chatBubble?: boolean;
+	richTextInput?: boolean;
+	largeTextAsFile?: boolean;
+	splitLargeChunks?: boolean;
+	responseAutoCopy?: boolean;
+	hapticFeedback?: boolean;
+	backgroundImageUrl?: string;
+	autoTags?: boolean;
+	userLocation?: string;
+	params?: Record<string, any>;
 
 	system?: string;
 	requestFormat?: string;
@@ -157,6 +179,7 @@ type Settings = {
 	num_batch?: string;
 	num_keep?: string;
 	options?: ModelOptions;
+	[key: string]: any;
 };
 
 type ModelOptions = {
@@ -169,6 +192,9 @@ type AudioSettings = {
 	speaker?: string;
 	model?: string;
 	nonLocalVoices?: boolean;
+	stt?: Record<string, any>;
+	tts?: Record<string, any>;
+	[key: string]: any;
 };
 
 type TitleSettings = {
@@ -184,6 +210,7 @@ type Prompt = {
 	title: string;
 	content: string;
 	timestamp: number;
+	[key: string]: any;
 };
 
 type Document = {
@@ -191,6 +218,7 @@ type Document = {
 	filename: string;
 	name: string;
 	title: string;
+	[key: string]: any;
 };
 
 type Config = {
@@ -207,6 +235,7 @@ type Config = {
 		enable_signup: boolean;
 		enable_login_form: boolean;
 		enable_web_search?: boolean;
+		enable_message_rating?: boolean;
 		enable_image_generation: boolean;
 		enable_admin_export: boolean;
 		enable_admin_chat_access: boolean;
@@ -217,6 +246,13 @@ type Config = {
 			[key: string]: string;
 		};
 	};
+	audio?: {
+		stt?: Record<string, any>;
+		tts?: Record<string, any>;
+		[key: string]: any;
+	};
+	file?: Record<string, any>;
+	[key: string]: any;
 };
 
 type PromptSuggestion = {
@@ -230,4 +266,15 @@ type SessionUser = {
 	name: string;
 	role: string;
 	profile_image_url: string;
+	permissions?: {
+		workspace?: {
+			models?: boolean;
+			knowledge?: boolean;
+			prompts?: boolean;
+			tools?: boolean;
+			[key: string]: boolean | undefined;
+		};
+		[key: string]: any;
+	};
+	[key: string]: any;
 };

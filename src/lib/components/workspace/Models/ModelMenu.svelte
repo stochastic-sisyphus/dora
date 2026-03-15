@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext } from 'svelte';
+		import { getContext } from 'svelte';
 
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
@@ -16,14 +15,10 @@
 
 	const i18n = getContext('i18n');
 
-	export let user;
-	export let model;
-
 	export let shareHandler: Function;
 	export let cloneHandler: Function;
 	export let exportHandler: Function;
 
-	export let hideHandler: Function;
 	export let deleteHandler: Function;
 	export let onClose: Function;
 
@@ -47,12 +42,10 @@
 			class="w-full max-w-[160px] rounded-xl px-1 py-1.5 border border-gray-300/30 dark:border-gray-700/50 z-50 bg-white dark:bg-gray-850 dark:text-white shadow"
 			sideOffset={-2}
 			side="bottom"
-			align="start"
-			transition={flyAndScale}
-		>
+			align="start"		>
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					shareHandler();
 				}}
 			>
@@ -62,7 +55,7 @@
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					cloneHandler();
 				}}
 			>
@@ -73,7 +66,7 @@
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					exportHandler();
 				}}
 			>
@@ -86,7 +79,7 @@
 
 			<DropdownMenu.Item
 				class="flex  gap-2  items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					deleteHandler();
 				}}
 			>

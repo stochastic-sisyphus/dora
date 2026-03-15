@@ -51,6 +51,7 @@
 		id: string;
 		name: string;
 		description: string;
+		access_control?: any;
 		data: {
 			file_ids: string[];
 		};
@@ -263,7 +264,7 @@
 
 	// Firefox fallback implementation using traditional file input
 	const handleFirefoxUpload = async () => {
-		return new Promise((resolve, reject) => {
+		return new Promise<void>((resolve, reject) => {
 			// Create hidden file input
 			const input = document.createElement('input');
 			input.type = 'file';

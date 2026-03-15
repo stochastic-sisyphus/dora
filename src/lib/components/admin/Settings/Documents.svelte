@@ -387,7 +387,7 @@
 
 		<hr class="dark:border-gray-850" />
 
-		<div class="space-y-2" />
+		<div class="space-y-2"></div>
 		<div>
 			<div class=" mb-2 text-sm font-medium">{$i18n.t('Embedding Model')}</div>
 

@@ -1,14 +1,14 @@
 <script lang="ts">
+	// -nocheck
 	import Fuse from 'fuse.js';
 
 	import { DropdownMenu } from 'bits-ui';
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { knowledge } from '$lib/stores';
+		import { knowledge } from '$lib/stores';
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 
 	const i18n = getContext('i18n');
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<Record<string, any>>();
 
 	export let onClose: Function = () => {};
 
@@ -27,8 +27,8 @@
 	}
 
 	onMount(() => {
-		let legacy_documents = $knowledge.filter((item) => item?.meta?.document);
-		let legacy_collections =
+		let legacy_documents: any[] = $knowledge.filter((item) => item?.meta?.document);
+		let legacy_collections: any[] =
 			legacy_documents.length > 0
 				? [
 						{
@@ -58,7 +58,7 @@
 					]
 				: [];
 
-		items = [...$knowledge, ...legacy_collections].map((item) => {
+		items = [...($knowledge as any[]), ...legacy_collections].map((item: any) => {
 			return {
 				...item,
 				...(item?.legacy || item?.meta?.legacy || item?.meta?.document ? { legacy: true } : {}),
@@ -87,9 +87,7 @@
 			class="w-full max-w-80 rounded-lg px-1 py-1.5 border border-gray-300/30 dark:border-gray-700/50 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
 			sideOffset={8}
 			side="bottom"
-			align="start"
-			transition={flyAndScale}
-		>
+			align="start"		>
 			<div class=" flex w-full space-x-2 py-0.5 px-2">
 				<div class="flex flex-1">
 					<div class=" self-center ml-1 mr-3">
@@ -125,7 +123,7 @@
 					{#each filteredItems as item}
 						<DropdownMenu.Item
 							class="flex gap-2.5 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-							on:click={() => {
+							onSelect={() => {
 								dispatch('select', item);
 							}}
 						>

@@ -122,7 +122,7 @@
 <div class="mt-0.5 mb-2 gap-1 flex flex-col md:flex-row justify-between">
 	<div class="flex md:self-center text-lg font-medium px-0.5">
 		{$i18n.t('Users')}
-		<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850" />
+		<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850"></div>
 
 		<span class="text-lg font-medium text-gray-500 dark:text-gray-300">{users.length}</span>
 	</div>
@@ -315,7 +315,7 @@
 					</div>
 				</th>
 
-				<th scope="col" class="px-3 py-2 text-right" />
+				<th scope="col" class="px-3 py-2 text-right"></th>
 			</tr>
 		</thead>
 		<tbody class="">
@@ -384,7 +384,7 @@
 							{/if}
 
 							<Tooltip content={$i18n.t('Edit User')}>
-								<button
+								<button aria-label={$i18n.t('Edit User')}
 									class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 									on:click={async () => {
 										showEditUserModal = !showEditUserModal;
@@ -410,7 +410,7 @@
 
 							{#if user.role !== 'admin'}
 								<Tooltip content={$i18n.t('Delete User')}>
-									<button
+									<button aria-label={$i18n.t('Delete User')}
 										class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 										on:click={async () => {
 											showDeleteConfirmDialog = true;

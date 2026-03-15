@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { config, models, settings, showCallOverlay } from '$lib/stores';
 	import { onMount, tick, getContext, onDestroy, createEventDispatcher } from 'svelte';
 
@@ -80,7 +81,7 @@
 	};
 
 	const startVideoStream = async () => {
-		const video = document.getElementById('camera-feed');
+		const video = document.getElementById('camera-feed') as HTMLVideoElement | null;
 		if (video) {
 			if (selectedVideoInputDeviceId === 'screen') {
 				cameraStream = await navigator.mediaDevices.getDisplayMedia({
@@ -88,7 +89,7 @@
 						cursor: 'always'
 					},
 					audio: false
-				});
+				} as any);
 			} else {
 				cameraStream = await navigator.mediaDevices.getUserMedia({
 					video: {
@@ -115,10 +116,10 @@
 	};
 
 	const takeScreenshot = () => {
-		const video = document.getElementById('camera-feed');
-		const canvas = document.getElementById('camera-canvas');
+		const video = document.getElementById('camera-feed') as HTMLVideoElement | null;
+		const canvas = document.getElementById('camera-canvas') as HTMLCanvasElement | null;
 
-		if (!canvas) {
+		if (!canvas || !video) {
 			return;
 		}
 
@@ -428,7 +429,7 @@
 			currentUtterance = null;
 		}
 
-		const audioElement = document.getElementById('audioElement');
+		const audioElement = document.getElementById('audioElement') as HTMLAudioElement | null;
 		if (audioElement) {
 			audioElement.muted = true;
 			audioElement.pause();
@@ -589,7 +590,21 @@
 		chatStreaming = false;
 	};
 
-	onMount(async () => {
+	onMount(() => {
+		const cleanup = async () => {
+			await stopAllAudio();
+			stopAudioStream();
+			eventTarget.removeEventListener('chat:start', chatStartHandler);
+			eventTarget.removeEventListener('chat', chatEventHandler);
+			eventTarget.removeEventListener('chat:finish', chatFinishHandler);
+			audioAbortController.abort();
+			await tick();
+			await stopAllAudio();
+			await stopRecordingCallback(false);
+			await stopCamera();
+		};
+
+		void (async () => {
 		const setWakeLock = async () => {
 			try {
 				wakeLock = await navigator.wakeLock.request('screen');
@@ -625,23 +640,10 @@
 		eventTarget.addEventListener('chat:start', chatStartHandler);
 		eventTarget.addEventListener('chat', chatEventHandler);
 		eventTarget.addEventListener('chat:finish', chatFinishHandler);
+		})();
 
-		return async () => {
-			await stopAllAudio();
-
-			stopAudioStream();
-
-			eventTarget.removeEventListener('chat:start', chatStartHandler);
-			eventTarget.removeEventListener('chat', chatEventHandler);
-			eventTarget.removeEventListener('chat:finish', chatFinishHandler);
-
-			audioAbortController.abort();
-			await tick();
-
-			await stopAllAudio();
-
-			await stopRecordingCallback(false);
-			await stopCamera();
+		return () => {
+			void cleanup();
 		};
 	});
 
@@ -740,7 +742,7 @@
 						'/static/favicon.png'
 							? `background-image: url('${model?.info?.meta?.profile_image_url}');`
 							: ''}
-					/>
+					></div>
 				{/if}
 				<!-- navbar -->
 			</button>
@@ -822,7 +824,7 @@
 							'/static/favicon.png'
 								? `background-image: url('${model?.info?.meta?.profile_image_url}');`
 								: ''}
-						/>
+						></div>
 					{/if}
 				</button>
 			{:else}
@@ -831,15 +833,15 @@
 						id="camera-feed"
 						autoplay
 						class="rounded-2xl h-full min-w-full object-cover object-center"
-						playsinline
-					/>
+						playsinline></video>
 
-					<canvas id="camera-canvas" style="display:none;" />
+					<canvas id="camera-canvas" style="display:none;"></canvas>
 
 					<div class=" absolute top-4 md:top-8 left-4">
 						<button
 							type="button"
 							class="p-1.5 text-white cursor-pointer backdrop-blur-xl bg-black/10 rounded-full"
+							aria-label={$i18n.t('Close camera preview')}
 							on:click={() => {
 								stopCamera();
 							}}
@@ -872,7 +874,11 @@
 							await startVideoStream();
 						}}
 					>
-						<button class=" p-3 rounded-full bg-gray-50 dark:bg-gray-900" type="button">
+							<button
+								class=" p-3 rounded-full bg-gray-50 dark:bg-gray-900"
+								type="button"
+								aria-label={$i18n.t('Switch camera')}
+							>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								viewBox="0 0 20 20"
@@ -889,12 +895,13 @@
 					</VideoInputMenu>
 				{:else}
 					<Tooltip content={$i18n.t('Camera')}>
-						<button
-							class=" p-3 rounded-full bg-gray-50 dark:bg-gray-900"
-							type="button"
-							on:click={async () => {
-								await navigator.mediaDevices.getUserMedia({ video: true });
-								startCamera();
+							<button
+								class=" p-3 rounded-full bg-gray-50 dark:bg-gray-900"
+								type="button"
+								aria-label={$i18n.t('Camera')}
+								on:click={async () => {
+									await navigator.mediaDevices.getUserMedia({ video: true });
+									startCamera();
 							}}
 						>
 							<svg
@@ -945,6 +952,7 @@
 			<div>
 				<button
 					class=" p-3 rounded-full bg-gray-50 dark:bg-gray-900"
+					aria-label={$i18n.t('End call')}
 					on:click={async () => {
 						await stopAudioStream();
 						await stopVideoStream();

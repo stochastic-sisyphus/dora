@@ -103,28 +103,53 @@
 	let eventCallback = null;
 
 	let chatIdUnsubscriber: Unsubscriber | undefined;
+	let chatIdValue = '';
+	let temporaryChatEnabledValue = false;
+	let currentChatPageValue = 1;
+	let socketValue = null;
+	$: chatIdValue = $chatId;
+	$: temporaryChatEnabledValue =
+		$temporaryChatEnabled || Boolean($config?.compatibility_mode);
 
-	let selectedModels = [''];
+	const getOpenAIBaseUrl = (model) =>
+		$config?.compatibility_mode
+			? (model?.info?.baseUrl ?? `${$WEBUI_BASE_URL}/v1`)
+			: `${$WEBUI_BASE_URL}/api`;
+	$: currentChatPageValue = $currentChatPage;
+	$: socketValue = $socket;
+
+	let selectedModels: string[] = [''];
 	let atSelectedModel: Model | undefined;
-	let selectedModelIds = [];
+	let selectedModelIds: string[] = [];
 	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
 
-	let selectedToolIds = [];
+	let selectedToolIds: string[] = [];
 	let webSearchEnabled = false;
 
-	let chat = null;
-	let tags = [];
+	let chat: any = null;
+	let tags: any[] = [];
 
-	let history = {
+	let history: any = {
 		messages: {},
 		currentId: null
 	};
 
 	// Chat Input
 	let prompt = '';
-	let chatFiles = [];
-	let files = [];
-	let params = {};
+	let chatFiles: any[] = [];
+	let files: any[] = [];
+	let params: any = {};
+
+	const getPromptLocation = async () => {
+		if (!$settings?.userLocation) {
+			return undefined;
+		}
+
+		const location = await getAndUpdateUserLocation(localStorage.token);
+		return typeof location === 'string'
+			? location
+			: `${location?.latitude ?? ''},${location?.longitude ?? ''}`;
+	};
 
 	$: if (chatIdProp) {
 		(async () => {
@@ -175,7 +200,7 @@
 	};
 
 	const showMessage = async (message) => {
-		const _chatId = JSON.parse(JSON.stringify($chatId));
+		const _chatId = JSON.parse(JSON.stringify(chatIdValue));
 		let _messageId = JSON.parse(JSON.stringify(message.id));
 
 		let messageChildrenIds = history.messages[_messageId].childrenIds;
@@ -201,7 +226,7 @@
 	};
 
 	const chatEventHandler = async (event, cb) => {
-		if (event.chat_id === $chatId) {
+		if (event.chat_id === chatIdValue) {
 			await tick();
 			console.log(event);
 			let message = history.messages[event.message_id];
@@ -335,16 +360,16 @@
 	onMount(async () => {
 		console.log('mounted');
 		window.addEventListener('message', onMessageHandler);
-		$socket?.on('chat-events', chatEventHandler);
+		socketValue?.on('chat-events', chatEventHandler);
 
-		if (!$chatId) {
+		if (!chatIdValue) {
 			chatIdUnsubscriber = chatId.subscribe(async (value) => {
 				if (!value) {
 					await initNewChat();
 				}
 			});
 		} else {
-			if ($temporaryChatEnabled) {
+			if (temporaryChatEnabledValue) {
 				await goto('/');
 			}
 		}
@@ -378,7 +403,7 @@
 	onDestroy(() => {
 		chatIdUnsubscriber?.();
 		window.removeEventListener('message', onMessageHandler);
-		$socket?.off('chat-events');
+		socketValue?.off('chat-events');
 	});
 
 	// File upload functions
@@ -386,7 +411,7 @@
 	const uploadWeb = async (url) => {
 		console.log(url);
 
-		const fileItem = {
+		const fileItem: any = {
 			type: 'doc',
 			name: url,
 			collection_name: '',
@@ -419,7 +444,7 @@
 	const uploadYoutubeTranscription = async (url) => {
 		console.log(url);
 
-		const fileItem = {
+		const fileItem: any = {
 			type: 'doc',
 			name: url,
 			collection_name: '',
@@ -578,13 +603,13 @@
 
 	const loadChat = async () => {
 		chatId.set(chatIdProp);
-		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
+		chat = await getChatById(localStorage.token, chatIdValue).catch(async (error) => {
 			await goto('/');
 			return null;
 		});
 
 		if (chat) {
-			tags = await getTagsById(localStorage.token, $chatId).catch(async (error) => {
+			tags = await getTagsById(localStorage.token, chatIdValue).catch(async (error) => {
 				return [];
 			});
 
@@ -659,6 +684,10 @@
 			querySelector: '.mermaid'
 		});
 
+		if (temporaryChatEnabledValue) {
+			return;
+		}
+
 		const res = await chatCompleted(localStorage.token, {
 			model: modelId,
 			messages: messages.map((m) => ({
@@ -670,7 +699,7 @@
 				...(m.sources ? { sources: m.sources } : {})
 			})),
 			chat_id: chatId,
-			session_id: $socket?.id,
+			session_id: socketValue?.id,
 			id: responseMessageId
 		}).catch((error) => {
 			toast.error(error);
@@ -694,8 +723,8 @@
 
 		await tick();
 
-		if ($chatId == chatId) {
-			if (!$temporaryChatEnabled) {
+		if (chatIdValue == chatId) {
+			if (!temporaryChatEnabledValue) {
 				chat = await updateChatById(localStorage.token, chatId, {
 					models: selectedModels,
 					messages: messages,
@@ -705,12 +734,16 @@
 				});
 
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await chats.set(await getChatList(localStorage.token, currentChatPageValue));
 			}
 		}
 	};
 
 	const chatActionHandler = async (chatId, actionId, modelId, responseMessageId, event = null) => {
+		if (temporaryChatEnabledValue) {
+			return;
+		}
+
 		const messages = createMessagesList(responseMessageId);
 
 		const res = await chatAction(localStorage.token, actionId, {
@@ -725,7 +758,7 @@
 			})),
 			...(event ? { event: event } : {}),
 			chat_id: chatId,
-			session_id: $socket?.id,
+			session_id: socketValue?.id,
 			id: responseMessageId
 		}).catch((error) => {
 			toast.error(error);
@@ -746,8 +779,8 @@
 			}
 		}
 
-		if ($chatId == chatId) {
-			if (!$temporaryChatEnabled) {
+		if (chatIdValue == chatId) {
+			if (!temporaryChatEnabledValue) {
 				chat = await updateChatById(localStorage.token, chatId, {
 					models: selectedModels,
 					messages: messages,
@@ -757,14 +790,14 @@
 				});
 
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await chats.set(await getChatList(localStorage.token, currentChatPageValue));
 			}
 		}
 	};
 
 	const getChatEventEmitter = async (modelId: string, chatId: string = '') => {
 		return setInterval(() => {
-			$socket?.emit('usage', {
+			socketValue?.emit('usage', {
 				action: 'chat',
 				model: modelId,
 				chat_id: chatId
@@ -827,7 +860,7 @@
 			if (messages.length === 0) {
 				await initChatHandler();
 			} else {
-				await saveChatHandler($chatId);
+				await saveChatHandler(chatIdValue);
 			}
 		}
 	};
@@ -837,7 +870,7 @@
 	//////////////////////////
 
 	const submitPrompt = async (userPrompt, { _raw = false } = {}) => {
-		console.log('submitPrompt', userPrompt, $chatId);
+		console.log('submitPrompt', userPrompt, chatIdValue);
 
 		const messages = createMessagesList(history.currentId);
 		const _selectedModels = selectedModels.map((modelId) =>
@@ -1002,7 +1035,7 @@
 		}
 		await tick();
 
-		const _chatId = JSON.parse(JSON.stringify($chatId));
+		const _chatId = JSON.parse(JSON.stringify(chatIdValue));
 		await Promise.all(
 			selectedModelIds.map(async (modelId, _modelIdx) => {
 				console.log('modelId', modelId);
@@ -1073,8 +1106,10 @@
 			})
 		);
 
-		currentChatPage.set(1);
-		chats.set(await getChatList(localStorage.token, $currentChatPage));
+		if (!temporaryChatEnabledValue) {
+			currentChatPage.set(1);
+			chats.set(await getChatList(localStorage.token, currentChatPageValue));
+		}
 
 		return _responses;
 	};
@@ -1098,9 +1133,7 @@
 						content: `${promptTemplate(
 							params?.system ?? $settings?.system ?? '',
 							$user.name,
-							$settings?.userLocation
-								? await getAndUpdateUserLocation(localStorage.token)
-								: undefined
+							await getPromptLocation()
 						)}${
 							(responseMessage?.userContext ?? null)
 								? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
@@ -1113,7 +1146,7 @@
 			.filter((message) => message?.content?.trim())
 			.map((message) => {
 				// Prepare the base message object
-				const baseMessage = {
+				const baseMessage: any = {
 					role: message.role,
 					content: message?.merged?.content ?? message.content
 				};
@@ -1230,8 +1263,8 @@
 			keep_alive: $settings.keepAlive ?? undefined,
 			tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 			files: files.length > 0 ? files : undefined,
-			session_id: $socket?.id,
-			chat_id: $chatId,
+			session_id: socketValue?.id,
+			chat_id: chatIdValue,
 			id: responseMessageId
 		});
 
@@ -1260,7 +1293,7 @@
 
 				while (true) {
 					const { value, done } = await reader.read();
-					if (done || stopResponseFlag || _chatId !== $chatId) {
+					if (done || stopResponseFlag || _chatId !== chatIdValue) {
 						responseMessage.done = true;
 						history.messages[responseMessageId] = responseMessage;
 
@@ -1559,9 +1592,7 @@
 									content: `${promptTemplate(
 										params?.system ?? $settings?.system ?? '',
 										$user.name,
-										$settings?.userLocation
-											? await getAndUpdateUserLocation(localStorage.token)
-											: undefined
+										await getPromptLocation()
 									)}${
 										(responseMessage?.userContext ?? null)
 											? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
@@ -1574,7 +1605,7 @@
 						.filter((message) => message?.content?.trim())
 						.map((message, idx, arr) => ({
 							role: message.role,
-							...((message.files?.filter((file) => file.type === 'image').length > 0 ?? false) &&
+							...(message.files?.filter((file) => file.type === 'image').length > 0 &&
 							message.role === 'user'
 								? {
 										content: [
@@ -1610,11 +1641,11 @@
 					max_tokens: params?.max_tokens ?? $settings?.params?.max_tokens ?? undefined,
 					tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 					files: files.length > 0 ? files : undefined,
-					session_id: $socket?.id,
-					chat_id: $chatId,
+					session_id: socketValue?.id,
+					chat_id: chatIdValue,
 					id: responseMessageId
 				},
-				`${$WEBUI_BASE_URL}/api`
+				getOpenAIBaseUrl(model)
 			);
 
 			// Wait until history/message have been updated
@@ -1639,7 +1670,7 @@
 							await handleOpenAIError(error, null, model, responseMessage);
 							break;
 						}
-						if (done || stopResponseFlag || _chatId !== $chatId) {
+						if (done || stopResponseFlag || _chatId !== chatIdValue) {
 							responseMessage.done = true;
 							history.messages[responseMessageId] = responseMessage;
 
@@ -1889,7 +1920,7 @@
 
 	const continueResponse = async () => {
 		console.log('continueResponse');
-		const _chatId = JSON.parse(JSON.stringify($chatId));
+		const _chatId = JSON.parse(JSON.stringify(chatIdValue));
 
 		if (history.currentId && history.messages[history.currentId].done == true) {
 			const responseMessage = history.messages[history.currentId];
@@ -1969,10 +2000,14 @@
 	const generateChatTitle = async (messages) => {
 		const lastUserMessage = messages.filter((message) => message.role === 'user').at(-1);
 
+		if (temporaryChatEnabledValue) {
+			return lastUserMessage?.content ?? 'New Chat';
+		}
+
 		if ($settings?.title?.auto ?? true) {
 			const modelId = selectedModels[0];
 
-			const title = await generateTitle(localStorage.token, modelId, messages, $chatId).catch(
+			const title = await generateTitle(localStorage.token, modelId, messages, chatIdValue).catch(
 				(error) => {
 					console.error(error);
 					return lastUserMessage?.content ?? 'New Chat';
@@ -1986,23 +2021,23 @@
 	};
 
 	const setChatTitle = async (_chatId, title) => {
-		if (_chatId === $chatId) {
+		if (_chatId === chatIdValue) {
 			chatTitle.set(title);
 		}
 
-		if (!$temporaryChatEnabled) {
+		if (!temporaryChatEnabledValue) {
 			chat = await updateChatById(localStorage.token, _chatId, { title: title });
 
 			currentChatPage.set(1);
-			await chats.set(await getChatList(localStorage.token, $currentChatPage));
+			await chats.set(await getChatList(localStorage.token, currentChatPageValue));
 		}
 	};
 
 	const setChatTags = async (messages) => {
-		if (!$temporaryChatEnabled) {
-			const currentTags = await getTagsById(localStorage.token, $chatId);
+		if (!temporaryChatEnabledValue) {
+			const currentTags = await getTagsById(localStorage.token, chatIdValue);
 			if (currentTags.length > 0) {
-				const res = await deleteTagsById(localStorage.token, $chatId);
+				const res = await deleteTagsById(localStorage.token, chatIdValue);
 				if (res) {
 					allTags.set(await getAllTags(localStorage.token));
 				}
@@ -2011,7 +2046,7 @@
 			const lastMessage = messages.at(-1);
 			const modelId = selectedModels[0];
 
-			let generatedTags = await generateTags(localStorage.token, modelId, messages, $chatId).catch(
+			let generatedTags = await generateTags(localStorage.token, modelId, messages, chatIdValue).catch(
 				(error) => {
 					console.error(error);
 					return [];
@@ -2024,10 +2059,10 @@
 			console.log(generatedTags);
 
 			for (const tag of generatedTags) {
-				await addTagById(localStorage.token, $chatId, tag);
+				await addTagById(localStorage.token, chatIdValue, tag);
 			}
 
-			chat = await getChatById(localStorage.token, $chatId);
+			chat = await getChatById(localStorage.token, chatIdValue);
 			allTags.set(await getAllTags(localStorage.token));
 		}
 	};
@@ -2121,9 +2156,9 @@
 	};
 
 	const initChatHandler = async () => {
-		if (!$temporaryChatEnabled) {
+		if (!temporaryChatEnabledValue) {
 			chat = await createNewChat(localStorage.token, {
-				id: $chatId,
+				id: chatIdValue,
 				title: $i18n.t('New Chat'),
 				models: selectedModels,
 				system: $settings.system ?? undefined,
@@ -2135,7 +2170,7 @@
 			});
 
 			currentChatPage.set(1);
-			await chats.set(await getChatList(localStorage.token, $currentChatPage));
+			await chats.set(await getChatList(localStorage.token, currentChatPageValue));
 			await chatId.set(chat.id);
 		} else {
 			await chatId.set('local');
@@ -2144,8 +2179,8 @@
 	};
 
 	const saveChatHandler = async (_chatId) => {
-		if ($chatId == _chatId) {
-			if (!$temporaryChatEnabled) {
+		if (chatIdValue == _chatId) {
+			if (!temporaryChatEnabledValue) {
 				chat = await updateChatById(localStorage.token, _chatId, {
 					models: selectedModels,
 					history: history,
@@ -2155,7 +2190,7 @@
 				});
 
 				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await chats.set(await getChatList(localStorage.token, currentChatPageValue));
 			}
 		}
 	};
@@ -2169,7 +2204,7 @@
 	</title>
 </svelte:head>
 
-<audio id="audioElement" src="" style="display: none;" />
+<audio id="audioElement" src="" style="display: none;"></audio>
 
 <EventConfirmDialog
 	bind:show={showEventConfirmation}
@@ -2204,18 +2239,16 @@
 				class="absolute {$showSidebar
 					? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]'
 					: ''} top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
-				style="background-image: url({$settings.backgroundImageUrl})  "
-			/>
+				style="background-image: url({$settings.backgroundImageUrl})  "></div>
 
 			<div
-				class="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-white to-white/85 dark:from-gray-900 dark:to-[#171717]/90 z-0"
-			/>
+				class="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-white to-white/85 dark:from-gray-900 dark:to-[#171717]/90 z-0"></div>
 		{/if}
 
 		<Navbar
 			bind:this={navbarElement}
 			chat={{
-				id: $chatId,
+				id: chatIdValue,
 				chat: {
 					title: $chatTitle,
 					models: selectedModels,
@@ -2225,7 +2258,6 @@
 					timestamp: Date.now()
 				}
 			}}
-			title={$chatTitle}
 			bind:selectedModels
 			shareEnabled={!!history.currentId}
 			{initNewChat}
@@ -2233,7 +2265,7 @@
 
 		<PaneGroup direction="horizontal" class="w-full h-full">
 			<Pane defaultSize={50} class="h-full flex w-full relative">
-				{#if $banners.length > 0 && !history.currentId && !$chatId && selectedModels.length <= 1}
+				{#if $banners.length > 0 && !history.currentId && !chatIdValue && selectedModels.length <= 1}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
 						<div class=" flex flex-col gap-1 w-full">
 							{#each $banners.filter( (b) => (b.dismissible ? !JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]').includes(b.id) : true) ) as banner}
@@ -2272,7 +2304,7 @@
 						>
 							<div class=" h-full w-full flex flex-col">
 								<Messages
-									chatId={$chatId}
+									chatId={chatIdValue}
 									bind:history
 									bind:autoScroll
 									bind:prompt
@@ -2299,7 +2331,7 @@
 								bind:selectedToolIds
 								bind:webSearchEnabled
 								bind:atSelectedModel
-								transparentBackground={$settings?.backgroundImageUrl ?? false}
+								transparentBackground={Boolean($settings?.backgroundImageUrl)}
 								{stopResponse}
 								{createMessagePair}
 								on:upload={async (e) => {
@@ -2340,7 +2372,7 @@
 								bind:selectedToolIds
 								bind:webSearchEnabled
 								bind:atSelectedModel
-								transparentBackground={$settings?.backgroundImageUrl ?? false}
+									transparentBackground={Boolean($settings?.backgroundImageUrl)}
 								{stopResponse}
 								{createMessagePair}
 								on:upload={async (e) => {
@@ -2375,15 +2407,8 @@
 				bind:params
 				bind:files
 				bind:pane={controlPane}
-				chatId={$chatId}
+				chatId={chatIdValue}
 				modelId={selectedModelIds?.at(0) ?? null}
-				models={selectedModelIds.reduce((a, e, i, arr) => {
-					const model = $models.find((m) => m.id === e);
-					if (model) {
-						return [...a, model];
-					}
-					return a;
-				}, [])}
 				{submitPrompt}
 				{stopResponse}
 				{showMessage}

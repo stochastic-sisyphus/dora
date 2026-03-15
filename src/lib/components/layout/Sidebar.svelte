@@ -54,7 +54,7 @@
 
 	let shiftKey = false;
 
-	let selectedChatId = null;
+	let selectedChatId: string | null = null;
 	let showDropdown = false;
 	let showPinnedChat = true;
 
@@ -62,7 +62,7 @@
 	let chatListLoading = false;
 	let allChatsLoaded = false;
 
-	let folders = {};
+	let folders: Record<string, any> = {};
 
 	const initFolders = async () => {
 		const folderList = await getFolders(localStorage.token).catch((error) => {
@@ -164,7 +164,7 @@
 
 		currentChatPage.set($currentChatPage + 1);
 
-		let newChatList = [];
+		let newChatList: any[] = [];
 
 		if (search) {
 			newChatList = await getChatListBySearchText(localStorage.token, search, $currentChatPage);
@@ -223,7 +223,7 @@
 		for (const file of files) {
 			const reader = new FileReader();
 			reader.onload = async (e) => {
-				const content = e.target.result;
+					const content = String(e.target?.result ?? '');
 
 				try {
 					const chatItems = JSON.parse(content);
@@ -391,10 +391,16 @@
 {#if $showSidebar}
 	<div
 		class=" fixed md:hidden z-40 top-0 right-0 left-0 bottom-0 bg-black/60 w-full min-h-screen h-screen flex justify-center overflow-hidden overscroll-contain"
+		role="button"
+		tabindex="0"
 		on:mousedown={() => {
 			showSidebar.set(!$showSidebar);
 		}}
-	/>
+		on:keydown={(event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				showSidebar.set(!$showSidebar);
+			}
+		}}></div>
 {/if}
 
 <div
@@ -444,7 +450,7 @@
 				</div>
 			</a>
 
-			<button
+			<button aria-label="Action"
 				class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
 				on:click={() => {
 					showSidebar.set(!$showSidebar);
@@ -696,7 +702,7 @@
 								}
 
 								if (chat.pinned) {
-									const res = await toggleChatPinnedStatusById(localStorage.token, chat, id);
+									const res = await toggleChatPinnedStatusById(localStorage.token, chat.id);
 								}
 
 								initChatList();

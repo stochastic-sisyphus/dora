@@ -34,6 +34,7 @@ export const createNewTool = async (token: string, tool: object) => {
 
 export const getTools = async (token: string = '') => {
 	let error = null;
+	let status: number | null = null;
 
 	const res = await fetch(`${get(WEBUI_API_BASE_URL)}/tools/`, {
 		method: 'GET',
@@ -44,7 +45,10 @@ export const getTools = async (token: string = '') => {
 		}
 	})
 		.then(async (res) => {
-			if (!res.ok) throw await res.json();
+			if (!res.ok) {
+				status = res.status;
+				throw await res.json();
+			}
 			return res.json();
 		})
 		.then((json) => {
@@ -57,10 +61,14 @@ export const getTools = async (token: string = '') => {
 		});
 
 	if (error) {
+		if (status === 404) {
+			console.warn('Tools endpoint missing on compatible server; continuing without tools.');
+			return [];
+		}
 		throw error;
 	}
 
-	return res;
+	return res ?? [];
 };
 
 export const getToolList = async (token: string = '') => {

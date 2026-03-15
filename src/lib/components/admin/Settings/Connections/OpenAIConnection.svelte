@@ -8,14 +8,14 @@
 	import AddConnectionModal from './AddConnectionModal.svelte';
 	import { connect } from 'socket.io-client';
 
-	export let onDelete = () => {};
-	export let onSubmit = () => {};
+	export let onDelete: Function = () => {};
+	export let onSubmit: Function = () => {};
 
 	export let pipeline = false;
 
 	export let url = '';
 	export let key = '';
-	export let config = {};
+	export let config: any = {};
 
 	let showConfigModal = false;
 </script>

@@ -11,6 +11,7 @@
 	import { CHATBAR_WINDOW_LABEL, MAIN_WINDOW_LABEL, OPEN_IN_MAIN_WINDOW } from '$lib/app/constants';
 	import Draggable from '$lib/components/desktop-app/Draggable.svelte';
 	import i18n, { getLanguages, initI18n } from '$lib/i18n';
+	import { APP_NAME } from '$lib/constants';
 	import {
 		activeUserCount,
 		appConfig,
@@ -46,6 +47,61 @@
 
 	$: console.log('Loaded changed', loaded);
 	$: console.log('WEBUI_BASE_URL changed', $WEBUI_BASE_URL);
+
+	const createCompatibilityConfig = (baseUrl: string) => {
+		let hostname = 'Compatible Server';
+
+		try {
+			hostname = new URL(baseUrl).hostname || hostname;
+		} catch {
+			hostname = baseUrl || hostname;
+		}
+
+		return {
+			status: true,
+			name: hostname,
+			version: 'compatible',
+			default_locale: 'en-US',
+			default_models: '',
+			default_prompt_suggestions: [],
+			features: {
+				auth: false,
+				auth_trusted_header: false,
+				enable_api_key: false,
+				enable_signup: false,
+				enable_login_form: false,
+				enable_web_search: true,
+				enable_message_rating: false,
+				enable_image_generation: false,
+				enable_admin_export: false,
+				enable_admin_chat_access: false,
+				enable_community_sharing: false
+			},
+			oauth: {
+				providers: {}
+			},
+			compatibility_mode: true
+		};
+	};
+
+	const createCompatibilityUser = () => ({
+		id: 'local-compatible-user',
+		email: '',
+		name: 'Local User',
+		role: 'user',
+		profile_image_url: '',
+		permissions: {
+			chat: {
+				file_upload: true
+			},
+			workspace: {
+				models: false,
+				knowledge: false,
+				prompts: false,
+				tools: false
+			}
+		}
+	});
 
 	const setupSocket = () => {
 		const _socket = io(`${$WEBUI_BASE_URL}` || undefined, {
@@ -163,14 +219,15 @@
 			}
 
 			let backendConfig = null;
+			let compatibilityMode = false;
 			try {
 				backendConfig = await getBackendConfig();
 				console.log('Backend config:', backendConfig);
 			} catch (error) {
 				console.error('Error loading backend config:', error);
+				compatibilityMode = true;
+				backendConfig = createCompatibilityConfig($WEBUI_BASE_URL);
 			}
-			// Initialize i18n even if we didn't get a backend config,
-			// so `/error` can show something that's not `undefined`.
 
 			initI18n();
 			if (!localStorage.locale) {
@@ -185,44 +242,42 @@
 				$i18n.changeLanguage(lang);
 			}
 
-			if (backendConfig) {
-				// Save Backend Status to Store
-				$config = backendConfig;
-				$WEBUI_NAME = backendConfig.name;
+			$config = backendConfig;
+			$WEBUI_NAME = backendConfig?.name || APP_NAME;
 
-				if ($config) {
+			if ($config) {
+				if (!compatibilityMode) {
 					setupSocket();
+				}
 
-					if (localStorage.token) {
-						console.log('Token:', localStorage.token);
+				if (compatibilityMode) {
+					$user = createCompatibilityUser();
+				} else if (localStorage.token) {
+					console.log('Token:', localStorage.token);
 
-						// Get Session User Info
-						const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
-							console.error(error);
-							return null;
-						});
+					// Get Session User Info
+					const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
+						console.error(error);
+						return null;
+					});
 
-						if (sessionUser) {
-							// Save Session User to Store
-							$user = sessionUser;
-							$config = await getBackendConfig();
-						} else {
-							// Redirect Invalid Session User to /auth Page
-							localStorage.removeItem('token');
-							await goto('/auth');
-						}
+					if (sessionUser) {
+						// Save Session User to Store
+						$user = sessionUser;
+						$config = await getBackendConfig();
 					} else {
-						// Don't redirect if we're already on the auth page
-						// Needed because we pass in tokens from OAuth logins via URL fragments
-						if (page.url.pathname !== '/auth') {
-							// await goto('/auth');
-							window.location.href = '/auth';
-						}
+						// Redirect Invalid Session User to /auth Page
+						localStorage.removeItem('token');
+						await goto('/auth');
+					}
+				} else {
+					// Don't redirect if we're already on the auth page
+					// Needed because we pass in tokens from OAuth logins via URL fragments
+					if (page.url.pathname !== '/auth') {
+						// await goto('/auth');
+						window.location.href = '/auth';
 					}
 				}
-			} else {
-				// Redirect to /error when Backend Not Detected
-				await goto(`/error`);
 			}
 
 			await tick();

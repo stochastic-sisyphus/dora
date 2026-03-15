@@ -3,8 +3,7 @@
 	import { marked } from 'marked';
 	import Fuse from 'fuse.js';
 
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
+		import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
 
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import Check from '$lib/components/icons/Check.svelte';
@@ -12,7 +11,7 @@
 
 	import { deleteModel, getOllamaVersion, pullModel } from '$lib/apis/ollama';
 
-	import { user, MODEL_DOWNLOAD_POOL, models, mobile, temporaryChatEnabled } from '$lib/stores';
+	import { user, MODEL_DOWNLOAD_POOL, models, mobile, temporaryChatEnabled, type Model } from '$lib/stores';
 	import { resolveResourceUrl } from '$lib/utils';
 	import { toast } from 'svelte-sonner';
 	import { capitalizeFirstLetter, sanitizeResponseContent, splitStream } from '$lib/utils';
@@ -47,7 +46,7 @@
 
 	let show = false;
 
-	let selectedModel = '';
+	let selectedModel: any = '';
 	$: selectedModel = items.find((item) => item.value === value) ?? '';
 
 	let searchValue = '';
@@ -96,7 +95,7 @@
 			return;
 		}
 
-		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, '0').catch(
+		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, 0).catch(
 			(error) => {
 				toast.error(error);
 				return null;
@@ -228,8 +227,7 @@
 		selectedModelIdx = 0;
 		window.setTimeout(() => document.getElementById('model-search-input')?.focus(), 0);
 	}}
-	closeFocus={false}
->
+	>
 	<DropdownMenu.Trigger
 		class="relative w-full font-primary"
 		aria-label={placeholder}
@@ -250,9 +248,7 @@
 	<DropdownMenu.Content
 		class=" z-40 {$mobile
 			? `w-full`
-			: `${className}`} max-w-[calc(100vw-1rem)] justify-start rounded-xl  bg-white dark:bg-gray-850 dark:text-white shadow-lg  outline-none"
-		transition={flyAndScale}
-		side={$mobile ? 'bottom' : 'bottom-start'}
+			: `${className}`} max-w-[calc(100vw-1rem)] justify-start rounded-xl  bg-white dark:bg-gray-850 dark:text-white shadow-lg  outline-none"		side="bottom"
 		sideOffset={3}
 	>
 		<slot>
@@ -515,7 +511,7 @@
 
 						<div class="mr-2 ml-1 translate-y-0.5">
 							<Tooltip content={$i18n.t('Cancel')}>
-								<button
+								<button aria-label={$i18n.t('Cancel')}
 									class="text-gray-800 dark:text-gray-100"
 									on:click={() => {
 										cancelModelPullHandler(model);
@@ -582,8 +578,8 @@
 				</div>
 			{/if}
 
-			<div class="hidden w-[42rem]" />
-			<div class="hidden w-[32rem]" />
+			<div class="hidden w-[42rem]"></div>
+			<div class="hidden w-[32rem]"></div>
 		</slot>
 	</DropdownMenu.Content>
 </DropdownMenu.Root>

@@ -5,6 +5,7 @@ export type Banner = {
 	content: string;
 	url?: string;
 	dismissible?: boolean;
+	dismissable?: boolean;
 	timestamp: number;
 };
 

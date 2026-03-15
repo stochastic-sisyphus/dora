@@ -22,7 +22,7 @@
 	export let onSubmit: Function;
 	export let onBack: null | Function = null;
 
-	export let model = null;
+	export let model: any = null;
 	export let edit = false;
 
 	export let preset = true;
@@ -31,7 +31,7 @@
 	let success = false;
 
 	let filesInputElement;
-	let inputFiles;
+	let inputFiles: any;
 
 	let showAdvanced = false;
 	let showPreview = false;
@@ -54,7 +54,7 @@
 		}
 	}
 
-	let info = {
+	let info: any = {
 		id: '',
 		base_model_id: null,
 		name: '',
@@ -69,24 +69,24 @@
 		}
 	};
 
-	let params = {
+	let params: any = {
 		system: ''
 	};
-	let capabilities = {
+	let capabilities: Record<string, any> = {
 		vision: true,
 		usage: undefined,
 		citations: true
 	};
 
-	let knowledge = [];
-	let toolIds = [];
-	let filterIds = [];
-	let actionIds = [];
+	let knowledge: any[] = [];
+	let toolIds: string[] = [];
+	let filterIds: string[] = [];
+	let actionIds: string[] = [];
 
-	let accessControl = {};
+	let accessControl: Record<string, any> = {};
 
-	const addUsage = (base_model_id) => {
-		const baseModel = $models.find((m) => m.id === base_model_id);
+	const addUsage = (base_model_id: string) => {
+		const baseModel: any = $models.find((m) => m.id === base_model_id);
 
 		if (baseModel) {
 			if (baseModel.owned_by === 'openai') {
@@ -613,7 +613,7 @@
 							</div>
 
 							{#if (info?.meta?.suggestion_prompts ?? null) !== null}
-								<button
+								<button aria-label="Action"
 									class="p-1 px-2 text-xs flex rounded transition"
 									type="button"
 									on:click={() => {
@@ -653,7 +653,7 @@
 												bind:value={prompt.content}
 											/>
 
-											<button
+											<button aria-label="Action"
 												class="px-2"
 												type="button"
 												on:click={() => {
@@ -684,7 +684,7 @@
 					<hr class=" border-gray-50 dark:border-gray-850 my-1.5" />
 
 					<div class="my-2">
-						<Knowledge bind:selectedKnowledge={knowledge} collections={$knowledgeCollections} />
+						<Knowledge bind:selectedKnowledge={knowledge} />
 					</div>
 
 					<div class="my-2">
@@ -735,8 +735,7 @@
 									rows="10"
 									value={JSON.stringify(info, null, 2)}
 									disabled
-									readonly
-								/>
+									readonly></textarea>
 							</div>
 						{/if}
 					</div>

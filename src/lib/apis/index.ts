@@ -1,39 +1,181 @@
 import { get } from 'svelte/store';
 import { COMPATIBLE_SERVER_URL } from '$lib/stores';
 
-export const getModels = async (token: string = '', base: boolean = false) => {
-	let error = null;
-	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/models${base ? '/base' : ''}`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			error = err;
-			console.error(err);
-			return null;
-		});
+const normalizeBaseUrl = (baseUrl: string) => baseUrl.trim().replace(/\/+$/, '');
 
-	if (error) {
-		throw error;
+const getJson = async (url: string, headers: Record<string, string>) => {
+	const response = await fetch(url, {
+		method: 'GET',
+		headers
+	});
+
+	if (!response.ok) {
+		let errorBody: unknown = null;
+		try {
+			errorBody = await response.json();
+		} catch {
+			errorBody = await response.text();
+		}
+		throw errorBody;
 	}
 
-	const models = res?.data ?? [];
-	return models;
+	return response.json();
+};
+
+const deriveServerName = (baseUrl: string, explicitName?: string | null) => {
+	if (explicitName?.trim()) {
+		return explicitName.trim();
+	}
+
+	try {
+		return new URL(baseUrl).hostname || baseUrl;
+	} catch {
+		return baseUrl || 'Compatible Server';
+	}
+};
+
+const normalizeCompatibleModels = (payload: any, discoveredBaseUrl: string) => {
+	const rawModels = Array.isArray(payload)
+		? payload
+		: Array.isArray(payload?.data)
+			? payload.data
+			: [];
+
+	return rawModels
+		.filter((model) => typeof model?.id === 'string' && model.id.trim() !== '')
+		.map((model) => ({
+			id: model.id,
+			name: model.name ?? model.id,
+			owned_by: 'openai' as const,
+			external: true,
+			source: 'compatible',
+			info: {
+				baseUrl: discoveredBaseUrl,
+				meta: {
+					profile_image_url: model?.info?.meta?.profile_image_url,
+					description: model?.description ?? '',
+					capabilities: {
+						usage: true,
+						vision: true,
+						...(model?.info?.meta?.capabilities ?? {})
+					}
+				},
+				...(model?.info ?? {})
+			}
+		}));
+};
+
+export const probeCompatibleServer = async (baseUrl: string, token: string = '') => {
+	const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+	if (!normalizedBaseUrl) {
+		throw new Error('Please enter a server URL.');
+	}
+
+	const headers = {
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
+		...(token && { authorization: `Bearer ${token}` })
+	};
+
+	let config = null;
+	try {
+		config = await getJson(`${normalizedBaseUrl}/api/config`, {
+			'Content-Type': 'application/json'
+		});
+	} catch (error) {
+		console.error(error);
+	}
+
+	let models = [];
+	let discoveredOpenAIBaseUrl = `${normalizedBaseUrl}/v1`;
+
+	try {
+		const res = await getJson(`${normalizedBaseUrl}/api/models`, headers);
+		models = res?.data ?? [];
+	} catch (error) {
+		console.error(error);
+	}
+
+	if (!models.length) {
+		const compatibilityEndpoints = [`${normalizedBaseUrl}/v1/models`, `${normalizedBaseUrl}/models`];
+
+		for (const modelsUrl of compatibilityEndpoints) {
+			try {
+				const res = await getJson(modelsUrl, headers);
+				discoveredOpenAIBaseUrl = modelsUrl.replace(/\/models$/, '');
+				models = normalizeCompatibleModels(res, discoveredOpenAIBaseUrl);
+
+				if (models.length > 0) {
+					break;
+				}
+			} catch (error) {
+				console.error(error);
+			}
+		}
+	}
+
+	if (!config && models.length === 0) {
+		throw new Error(
+			'Could not read backend configuration or models from that server URL.'
+		);
+	}
+
+	return {
+		baseUrl: normalizedBaseUrl,
+		name: deriveServerName(normalizedBaseUrl, config?.name),
+		config,
+		models,
+		modelCount: models.length,
+		compatibilityMode: !config,
+		openAIBaseUrl: discoveredOpenAIBaseUrl
+	};
+};
+
+export const getModels = async (token: string = '', base: boolean = false) => {
+	const baseUrl = get(COMPATIBLE_SERVER_URL);
+	const headers = {
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
+		...(token && { authorization: `Bearer ${token}` })
+	};
+
+	try {
+		const res = await getJson(`${baseUrl}/api/models${base ? '/base' : ''}`, headers);
+		return res?.data ?? [];
+	} catch (error) {
+		console.error(error);
+	}
+
+	if (base) {
+		return [];
+	}
+
+	const compatibilityEndpoints = [`${baseUrl}/v1/models`, `${baseUrl}/models`];
+
+	for (const modelsUrl of compatibilityEndpoints) {
+		try {
+			const res = await getJson(modelsUrl, headers);
+			const discoveredBaseUrl = modelsUrl.replace(/\/models$/, '');
+			const models = normalizeCompatibleModels(res, discoveredBaseUrl);
+
+			if (models.length > 0) {
+				return models;
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	return [];
 };
 
 type ChatCompletedForm = {
 	model: string;
-	messages: string[];
+	messages: any[];
 	chat_id: string;
 	session_id: string;
+	id?: string;
+	[key: string]: any;
 };
 
 export const chatCompleted = async (token: string, body: ChatCompletedForm) => {
@@ -71,8 +213,9 @@ export const chatCompleted = async (token: string, body: ChatCompletedForm) => {
 
 type ChatActionForm = {
 	model: string;
-	messages: string[];
+	messages: any[];
 	chat_id: string;
+	[key: string]: any;
 };
 
 export const chatAction = async (token: string, action_id: string, body: ChatActionForm) => {
@@ -1085,11 +1228,21 @@ export interface ModelConfig {
 
 export interface ModelMeta {
 	description?: string;
-	capabilities?: object;
+	capabilities?: Record<string, any>;
 	profile_image_url?: string;
+	suggestion_prompts?: any;
+	tags?: any[];
+	knowledge?: any[];
+	toolIds?: string[];
+	filterIds?: string[];
+	actionIds?: string[];
+	hidden?: boolean;
+	[key: string]: any;
 }
 
-export interface ModelParams {}
+export interface ModelParams {
+	[key: string]: any;
+}
 
 export type GlobalModelConfig = ModelConfig[];
 

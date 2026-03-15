@@ -36,8 +36,8 @@ export const DEFAULT_CONFIG: AppConfig = {
 	openChatsInCompanion: true,
 	openLinksInApp: false,
 	substrate: {
-		searxngUrl: 'https://search.schrodingers.lol',
-		surrealdbUrl: 'https://sync.schrodingers.lol',
+		searxngUrl: '',
+		surrealdbUrl: '',
 		openrouterApiKey: ''
 	}
 } as const;

@@ -116,7 +116,7 @@ export const setModelsConfig = async (token: string, config: object) => {
 	return res;
 };
 
-export const setDefaultPromptSuggestions = async (token: string, promptSuggestions: string) => {
+export const setDefaultPromptSuggestions = async (token: string, promptSuggestions: any) => {
 	let error = null;
 
 	const res = await fetch(`${get(WEBUI_API_BASE_URL)}/configs/suggestions`, {
@@ -162,15 +162,16 @@ export const getBanners = async (token: string): Promise<Banner[]> => {
 		})
 		.catch((err) => {
 			console.log(err);
-			error = err.detail;
+			error = err?.detail ?? err;
 			return null;
 		});
 
 	if (error) {
-		throw error;
+		console.warn('Unable to load banners; continuing without them.', error);
+		return [];
 	}
 
-	return res;
+	return res ?? [];
 };
 
 export const setBanners = async (token: string, banners: Banner[]) => {

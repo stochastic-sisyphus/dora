@@ -10,12 +10,12 @@
 	import Wrench from '$lib/components/icons/Wrench.svelte';
 	import ManageOllamaModal from './ManageOllamaModal.svelte';
 
-	export let onDelete = () => {};
-	export let onSubmit = () => {};
+	export let onDelete: Function = () => {};
+	export let onSubmit: Function = () => {};
 
 	export let url = '';
 	export let idx = 0;
-	export let config = {};
+	export let config: any = {};
 
 	let showManageModal = false;
 	let showConfigModal = false;

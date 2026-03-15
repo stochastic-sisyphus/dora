@@ -4,7 +4,7 @@
 	import MagnifyingGlass from '$lib/components/icons/MagnifyingGlass.svelte';
 	import Collapsible from '$lib/components/common/Collapsible.svelte';
 
-	export let status = { urls: [], query: '' };
+	export let status: any = { urls: [], query: '' };
 	let state = false;
 </script>
 

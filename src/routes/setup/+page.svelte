@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { probeCompatibleServer } from '$lib/apis';
 	import { APP_STORE_FILE } from '$lib/app/constants';
 	import { APP_NAME } from '$lib/constants';
-	import { WEBUI_BASE_URL } from '$lib/stores';
+	import { appConfig, config, models, WEBUI_BASE_URL, WEBUI_NAME } from '$lib/stores';
 	import { getStore } from '@tauri-apps/plugin-store';
 	import type { i18n as i18nType } from 'i18next';
 	import { getContext, onMount } from 'svelte';
@@ -13,12 +14,62 @@
 	console.debug('On setup page');
 
 	let baseUrl = '';
+	let probing = false;
+	let probeError = '';
+	let probeResult:
+		| null
+		| {
+				name: string;
+				modelCount: number;
+				compatibilityMode: boolean;
+		  } = null;
+
+	const normalizeBaseUrl = (url: string) => url.trim().replace(/\/+$/, '');
+
+	const persistBaseUrl = async () => {
+		const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, '');
+		if (!normalizedBaseUrl) {
+			probeError = 'Please enter a server URL.';
+			return;
+		}
+
+		probing = true;
+		probeError = '';
+
+		let serverProfile;
+		try {
+			serverProfile = await probeCompatibleServer(normalizedBaseUrl);
+		} catch (error) {
+			probeResult = null;
+			probeError = error instanceof Error ? error.message : String(error);
+			probing = false;
+			return;
+		}
+
+		baseUrl = normalizedBaseUrl;
+		probeResult = {
+			name: serverProfile.name,
+			modelCount: serverProfile.modelCount,
+			compatibilityMode: serverProfile.compatibilityMode
+		};
+		$WEBUI_NAME = serverProfile.name;
+		$config = serverProfile.config ?? $config;
+		$models = serverProfile.models;
+		$WEBUI_BASE_URL = normalizedBaseUrl;
+		$appConfig = { ...$appConfig, webuiBaseUrl: normalizedBaseUrl };
+		probing = false;
+	};
+
 	const onKeyDown = async (e: KeyboardEvent) => {
 		if (e.key === 'Enter') {
-			revealSplashScreen();
-			$WEBUI_BASE_URL = baseUrl;
+			await persistBaseUrl();
 		}
 	};
+
+	$: if (normalizeBaseUrl(baseUrl) !== $WEBUI_BASE_URL) {
+		probeError = '';
+		probeResult = null;
+	}
 
 	$: if ($WEBUI_BASE_URL) {
 		goto('/', { replaceState: true });
@@ -39,7 +90,7 @@
 		console.debug('SETUP PAGE MOUNTED');
 		const store = await getStore(APP_STORE_FILE);
 		for (const key of (await store?.keys()) || []) {
-			if (key !== 'app_config' && key !== 'webui_base_url') {
+			if (key !== 'app_config' && key !== 'compatible_server_url') {
 				await store?.delete(key);
 			}
 		}
@@ -62,25 +113,21 @@
 			<div class="my-auto pb-10 w-full dark:text-gray-100">
 				<h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
 					Welcome to {APP_NAME}
-					<!-- {$i18n.t('Welcome to Open WebUI')} -->
 				</h1>
 
 				<form
 					class="flex flex-col justify-center space-y-4"
-					on:submit|preventDefault={() => {
-						revealSplashScreen();
-						$WEBUI_BASE_URL = baseUrl;
+					on:submit|preventDefault={async () => {
+						await persistBaseUrl();
 					}}
 				>
 					<div class="text-center text-gray-600 dark:text-gray-400 mb-4">
-						Please enter the base URL of your Open WebUI instance to get started
-						<!-- {$i18n.t('Please enter the base URL of your Open WebUI instance to get started')} -->
+						Please enter the base URL of your compatible server to get started
 					</div>
 
 					<div class="space-y-1">
 						<div class=" text-sm font-medium text-left mb-1">
-							WebUI Base URL
-							<!-- {$i18n.t('WebUI Base URL')} -->
+							Server Base URL
 						</div>
 						<input
 							bind:value={baseUrl}
@@ -93,12 +140,32 @@
 						/>
 					</div>
 
+					{#if probeError}
+						<div class="text-left text-sm text-red-600 dark:text-red-400">
+							{probeError}
+						</div>
+					{/if}
+
+					{#if probeResult}
+						<div class="rounded-2xl border border-gray-200 dark:border-gray-800 px-4 py-3 text-left">
+							<div class="text-sm font-medium text-gray-900 dark:text-white">
+								{probeResult.name}
+							</div>
+							<div class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+								{probeResult.compatibilityMode ? 'Compatible API detected' : 'Backend API detected'}
+							</div>
+							<div class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+								{probeResult.modelCount} model{probeResult.modelCount === 1 ? '' : 's'} discovered
+							</div>
+						</div>
+					{/if}
+
 					<button
 						class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
 						type="submit"
+						disabled={probing}
 					>
-						<!-- {$i18n.t('Get Started')} -->
-						Get Started
+						{probing ? 'Checking Server…' : 'Get Started'}
 					</button>
 				</form>
 			</div>

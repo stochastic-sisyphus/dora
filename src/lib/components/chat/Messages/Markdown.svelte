@@ -17,6 +17,7 @@
 	export let save = false;
 
 	export let sourceIds = [];
+	/** @type {Function} */
 	export let onSourceClick = () => {};
 
 	let tokens = [];

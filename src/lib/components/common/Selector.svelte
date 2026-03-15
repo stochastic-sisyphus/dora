@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { Select } from 'bits-ui';
 
-	import { flyAndScale } from '$lib/utils/transitions';
-
 	import { createEventDispatcher } from 'svelte';
 	import ChevronDown from '../icons/ChevronDown.svelte';
 	import Check from '../icons/Check.svelte';
@@ -24,6 +22,7 @@
 	];
 
 	let searchValue = '';
+	$: selectedItem = items.find((item) => item.value === value) ?? null;
 
 	$: filteredItems = searchValue
 		? items.filter((item) => item.value.toLowerCase().includes(searchValue.toLowerCase()))
@@ -32,24 +31,22 @@
 
 <Select.Root
 	{items}
+	type="single"
+	bind:value
 	onOpenChange={() => {
 		searchValue = '';
 	}}
-	selected={items.find((item) => item.value === value)}
-	onSelectedChange={(selectedItem) => {
-		value = selectedItem.value;
-	}}
 >
 	<Select.Trigger class="relative w-full" aria-label={placeholder}>
-		<Select.Value
-			class="inline-flex h-input px-0.5 w-full outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400  focus:outline-none"
-			{placeholder}
-		/>
+		<div
+			class="inline-flex h-input px-0.5 w-full items-center outline-none bg-transparent truncate text-lg font-semibold placeholder-gray-400 focus:outline-none"
+		>
+			{selectedItem?.label ?? placeholder}
+		</div>
 		<ChevronDown className="absolute end-2 top-1/2 -translate-y-[45%] size-3.5" strokeWidth="2.5" />
 	</Select.Trigger>
 	<Select.Content
 		class="w-full rounded-lg  bg-white dark:bg-gray-900 dark:text-white shadow-lg border border-gray-300/30 dark:border-gray-700/40  outline-none"
-		transition={flyAndScale}
 		sideOffset={4}
 	>
 		<slot>

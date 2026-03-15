@@ -1,6 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { WEBUI_NAME, config } from '$lib/stores';
+	import { WEBUI_BASE_URL, WEBUI_NAME, config } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -22,35 +22,41 @@
 			<div class="m-auto pb-44 flex flex-col justify-center">
 				<div class="max-w-md">
 					<div class="text-center text-2xl font-medium z-50">
-						{$i18n.t('{{webUIName}} Backend Required', { webUIName: $WEBUI_NAME })}
+						{$WEBUI_NAME} server unavailable
 					</div>
 
 					<div class=" mt-4 text-center text-sm w-full">
-						{$i18n.t(
-							"Oops! You're using an unsupported method (frontend only). Please serve the WebUI from the backend."
-						)}
+						Dora could not read backend configuration from the current server URL.
+						<br class=" " />
+						<br class=" " />
+						This usually means the server is offline, the URL is wrong, or this URL does not provide the
+						configuration endpoint Dora checked during startup.
 
-						<br class=" " />
-						<br class=" " />
-						<a
-							class=" font-semibold underline"
-							href="https://github.com/open-webui/open-webui#how-to-install-"
-							target="_blank">{$i18n.t('See readme.md for instructions')}</a
-						>
-						{$i18n.t('or')}
-						<a class=" font-semibold underline" href="https://discord.gg/5rJgQTnV4s" target="_blank"
-							>{$i18n.t('join our Discord for help.')}</a
-						>
+						{#if $WEBUI_BASE_URL}
+							<br class=" " />
+							<br class=" " />
+							<span class="font-medium">Current URL:</span>
+							<span class="break-all">{$WEBUI_BASE_URL}</span>
+						{/if}
 					</div>
 
-					<div class=" mt-6 mx-auto relative group w-fit">
+					<div class="mt-6 mx-auto flex flex-wrap justify-center gap-3 relative group w-fit">
+						<button
+							class="relative z-20 flex px-5 py-2 rounded-full bg-white/90 hover:bg-white transition font-medium text-sm border border-gray-200"
+							on:click={() => {
+								goto('/setup');
+							}}
+						>
+							Change Server URL
+						</button>
+
 						<button
 							class="relative z-20 flex px-5 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition font-medium text-sm"
 							on:click={() => {
 								location.href = '/';
 							}}
 						>
-							{$i18n.t('Check Again')}
+							Check Again
 						</button>
 					</div>
 				</div>

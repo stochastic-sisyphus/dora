@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { probeCompatibleServer } from '$lib/apis';
+	import { APP_STORE_FILE } from '$lib/app/constants';
 	import { setShortcut } from '$lib/app/commands/set-shortcut';
 	import type { ChatBarPosition, ResetChatTime } from '$lib/app/state';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
@@ -8,6 +10,7 @@
 	import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 	import * as autoStart from '@tauri-apps/plugin-autostart';
 	import { isRegistered, unregister } from '@tauri-apps/plugin-global-shortcut';
+	import { getStore } from '@tauri-apps/plugin-store';
 	import type { i18n as i18nT } from 'i18next';
 	import { createEventDispatcher, getContext, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -74,16 +77,19 @@
 	let openrouterApiKey = '';
 	let searxngUrl = '';
 	let surrealdbUrl = '';
+	let compatibleServerUrl = '';
 	let showConfirmDialog = false;
 
-	const webUIBaseURLChangeHandler = async () => {
-		console.log('Changing webui base url');
+	const normalizeBaseUrl = (url: string) => url.trim().replace(/\/+$/, '');
+
+	const resetCompatibleServerUrl = async () => {
 		showConfirmDialog = true;
 	};
 
 	const handleConfirm = async () => {
 		await getCurrentWebviewWindow().clearAllBrowsingData();
 		$COMPATIBLE_SERVER_URL = '';
+		$appConfig = { ...$appConfig, webuiBaseUrl: '' };
 		window.location.href = '/setup';
 	};
 
@@ -115,15 +121,47 @@
 			console.error('Failed to set launch at login to', launchAtLogin, e);
 		}
 
+		const normalizedCompatibleServerUrl = normalizeBaseUrl(compatibleServerUrl);
+		if (!normalizedCompatibleServerUrl) {
+			toast.error($i18n.t('Please enter a server URL.'));
+			return;
+		}
+
+		const serverChanged = normalizedCompatibleServerUrl !== $COMPATIBLE_SERVER_URL;
+		if (serverChanged) {
+			try {
+				await probeCompatibleServer(normalizedCompatibleServerUrl);
+			} catch (error) {
+				toast.error(error instanceof Error ? error.message : String(error));
+				return;
+			}
+		}
+
 		$appConfig = {
 			...$appConfig,
 			shortcut,
+			webuiBaseUrl: normalizedCompatibleServerUrl,
 			chatBarPositionPreference: positionOnScreen,
 			resetChatTimePreference: resetToNewChat,
 			openChatsInCompanion: openNewChatsInCompanion === 'true',
 			openLinksInApp,
 			substrate: { ...$appConfig.substrate, openrouterApiKey, searxngUrl, surrealdbUrl }
 		};
+		$COMPATIBLE_SERVER_URL = normalizedCompatibleServerUrl;
+
+		if (serverChanged) {
+			const store = await getStore(APP_STORE_FILE);
+			for (const key of (await store?.keys()) || []) {
+				if (!['app_config', 'compatible_server_url', 'theme'].includes(key)) {
+					await store?.delete(key);
+				}
+			}
+			await store?.save();
+			localStorage.removeItem('token');
+			await getCurrentWebviewWindow().clearAllBrowsingData();
+			window.location.href = '/';
+			return;
+		}
 
 		console.debug('After:', $appConfig);
 		dispatch('save');
@@ -139,6 +177,7 @@
 		openrouterApiKey = $appConfig?.substrate?.openrouterApiKey ?? '';
 		searxngUrl = $appConfig?.substrate?.searxngUrl ?? '';
 		surrealdbUrl = $appConfig?.substrate?.surrealdbUrl ?? '';
+		compatibleServerUrl = $COMPATIBLE_SERVER_URL || $appConfig.webuiBaseUrl || '';
 	});
 </script>
 
@@ -230,9 +269,9 @@
 				</div>
 			</div>
 			
-			<!-- SearXNG URL -->
+			<!-- Legacy Search URL -->
 			<div class="mt-4">
-				<div class="text-sm font-medium mb-1">SearXNG URL</div>
+				<div class="text-sm font-medium mb-1">Legacy Search URL</div>
 				<input
 					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
 					type="url"
@@ -240,7 +279,7 @@
 					bind:value={searxngUrl}
 				/>
 				<div class="text-xs text-gray-500 mt-1">
-					Your self-hosted SearXNG instance URL for research searches
+					Legacy desktop-app search setting. New research flows use Sidecar Configuration.
 				</div>
 			</div>
 			
@@ -277,9 +316,9 @@
 				</div>
 			</div>
 			
-			<!-- SearXNG URL -->
+			<!-- Legacy Search URL -->
 			<div class="mt-4">
-				<div class="text-sm font-medium mb-1">SearXNG URL</div>
+				<div class="text-sm font-medium mb-1">Legacy Search URL</div>
 				<input
 					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
 					type="url"
@@ -287,7 +326,7 @@
 					bind:value={searxngUrl}
 				/>
 				<div class="text-xs text-gray-500 mt-1">
-					Your self-hosted SearXNG instance URL for research searches
+					Legacy desktop-app search setting. New research flows use Sidecar Configuration.
 				</div>
 			</div>
 			
@@ -308,23 +347,24 @@
 
 		<hr class=" dark:border-gray-850 my-3" />
 
-		<div class="flex w-full justify-between">
-			<div class="self-center text-xs font-medium">{$i18n.t('Change WebUI Base URL')}</div>
-			<div class="flex items-center relative">
-				<div class="relative flex items-center">
-					<input
-						type="text"
-						readonly
-						value={$COMPATIBLE_SERVER_URL}
-						class="text-xs px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-850 dark:text-gray-200 focus:outline-none pr-24"
-					/>
-					<button
-						class="absolute right-1 flex text-xs items-center space-x-1 mr-1 px-3 py-1 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 transition"
-						on:click={webUIBaseURLChangeHandler}
-					>
-						<div class="self-center font-medium line-clamp-1">{$i18n.t('Change')}</div>
-					</button>
-				</div>
+		<div>
+			<div class="mb-1 text-sm font-medium">Compatible Server URL</div>
+			<div class="flex items-center gap-2">
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://your-server.example.com"
+					bind:value={compatibleServerUrl}
+				/>
+				<button
+					class="shrink-0 px-3 py-2 text-xs rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 transition"
+					on:click={resetCompatibleServerUrl}
+				>
+					Reset
+				</button>
+			</div>
+			<div class="text-xs text-gray-500 mt-1">
+				Change this to point Dora at a different compatible server. Saving reloads the app against the new URL.
 			</div>
 		</div>
 	</div>

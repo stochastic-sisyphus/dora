@@ -78,7 +78,7 @@
 	<div>
 		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
 			<div class=" text-lg font-medium self-center">{$i18n.t('Archived Chats')}</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;
@@ -138,7 +138,7 @@
 											<th scope="col" class="px-3 py-2 hidden md:flex">
 												{$i18n.t('Created At')}
 											</th>
-											<th scope="col" class="px-3 py-2 text-right" />
+											<th scope="col" class="px-3 py-2 text-right"></th>
 										</tr>
 									</thead>
 									<tbody>
@@ -166,7 +166,7 @@
 												<td class="px-3 py-1 text-right">
 													<div class="flex justify-end w-full">
 														<Tooltip content={$i18n.t('Unarchive Chat')}>
-															<button
+															<button aria-label={$i18n.t('Unarchive Chat')}
 																class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 																on:click={async () => {
 																	unarchiveChatHandler(chat.id);
@@ -190,7 +190,7 @@
 														</Tooltip>
 
 														<Tooltip content={$i18n.t('Delete Chat')}>
-															<button
+															<button aria-label={$i18n.t('Delete Chat')}
 																class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 																on:click={async () => {
 																	deleteChatHandler(chat.id);

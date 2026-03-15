@@ -1,5 +1,3 @@
-mod sidecar;
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -11,11 +9,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_global_shortcut::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![
-            sidecar::searxng_search,
-            sidecar::extract_research,
-        ]);
+        .plugin(tauri_plugin_shell::init());
 
     builder
         .build(tauri::generate_context!())

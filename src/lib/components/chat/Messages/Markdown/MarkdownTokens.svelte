@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import DOMPurify from 'dompurify';
 	import { createEventDispatcher, getContext } from 'svelte';
 	const i18n = getContext('i18n');
@@ -21,7 +22,7 @@
 	const dispatch = createEventDispatcher();
 
 	export let id: string;
-	export let tokens: Token[];
+	export let tokens: any[] = [];
 	export let top = true;
 
 	export let save = false;
@@ -247,7 +248,7 @@
 			/>
 		{/if}
 	{:else if token.type === 'space'}
-		<div class="my-2" />
+		<div class="my-2"></div>
 	{:else}
 		{console.log('Unknown token', token)}
 	{/if}

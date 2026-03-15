@@ -124,7 +124,7 @@
 		dispatch('change');
 	};
 
-	const focusEdit = async (node: HTMLInputElement) => {
+	const focusEdit = (node: HTMLInputElement) => {
 		node.focus();
 	};
 
@@ -401,7 +401,7 @@
 
 				{#if id === $chatId}
 					<!-- Shortcut support using "delete-chat-button" id -->
-					<button
+					<button aria-label="Delete Chat Button"
 						id="delete-chat-button"
 						class="hidden"
 						on:click={() => {

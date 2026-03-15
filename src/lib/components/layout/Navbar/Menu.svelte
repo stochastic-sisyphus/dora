@@ -16,8 +16,7 @@
 		mobile,
 		temporaryChatEnabled
 	} from '$lib/stores';
-	import { flyAndScale } from '$lib/utils/transitions';
-
+	
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import Tags from '$lib/components/chat/Tags.svelte';
 	import Map from '$lib/components/icons/Map.svelte';
@@ -28,14 +27,12 @@
 
 	const i18n = getContext('i18n');
 
-	export let shareEnabled: boolean = false;
 	export let shareHandler: Function;
-	export let downloadHandler: Function;
 
 	// export let tagHandler: Function;
 
-	export let chat;
-	export let onClose: Function = () => {};
+export let chat;
+export let onClose: Function = () => {};
 
 	const getChatAsText = async () => {
 		const history = chat.chat.history;
@@ -106,12 +103,10 @@
 			class="w-full max-w-[200px] rounded-xl px-1 py-1.5  z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
 			sideOffset={8}
 			side="bottom"
-			align="end"
-			transition={flyAndScale}
-		>
+			align="end"		>
 			<!-- <DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer dark:hover:bg-gray-800 rounded-md"
-				on:click={async () => {
+				onSelect={async () => {
 					await showSettings.set(!$showSettings);
 				}}
 			>
@@ -141,7 +136,7 @@
 				<DropdownMenu.Item
 					class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 					id="chat-controls-button"
-					on:click={async () => {
+					onSelect={async () => {
 						await showControls.set(true);
 						await showOverview.set(false);
 						await showArtifacts.set(false);
@@ -156,7 +151,7 @@
 				<DropdownMenu.Item
 					class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 					id="chat-share-button"
-					on:click={() => {
+					onSelect={() => {
 						shareHandler();
 					}}
 				>
@@ -179,7 +174,7 @@
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				id="chat-overview-button"
-				on:click={async () => {
+				onSelect={async () => {
 					await showControls.set(true);
 					await showOverview.set(true);
 					await showArtifacts.set(false);
@@ -192,7 +187,7 @@
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				id="chat-overview-button"
-				on:click={async () => {
+				onSelect={async () => {
 					await showControls.set(true);
 					await showArtifacts.set(true);
 					await showOverview.set(false);
@@ -224,13 +219,11 @@
 					<div class="flex items-center">{$i18n.t('Download')}</div>
 				</DropdownMenu.SubTrigger>
 				<DropdownMenu.SubContent
-					class="w-full rounded-xl px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"
-					transition={flyAndScale}
-					sideOffset={8}
+					class="w-full rounded-xl px-1 py-1.5 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg"					sideOffset={8}
 				>
 					<DropdownMenu.Item
 						class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-						on:click={() => {
+						onSelect={() => {
 							downloadJSONExport();
 						}}
 					>
@@ -238,7 +231,7 @@
 					</DropdownMenu.Item>
 					<DropdownMenu.Item
 						class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-						on:click={() => {
+						onSelect={() => {
 							downloadTxt();
 						}}
 					>
@@ -247,7 +240,7 @@
 
 					<DropdownMenu.Item
 						class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-						on:click={() => {
+						onSelect={() => {
 							downloadPdf();
 						}}
 					>
@@ -259,7 +252,7 @@
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				id="chat-copy-button"
-				on:click={async () => {
+				onSelect={async () => {
 					const res = await copyToClipboard(await getChatAsText()).catch((e) => {
 						console.error(e);
 					});

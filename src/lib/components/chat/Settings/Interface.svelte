@@ -35,7 +35,7 @@
 
 	let landingPageMode = '';
 	let chatBubble = true;
-	let chatDirection: 'LTR' | 'RTL' = 'LTR';
+	let chatDirection: 'LTR' | 'RTL' | 'ltr' | 'rtl' | 'auto' = 'LTR';
 
 	// Admin - Show Update Available Toast
 	let showUpdateToast = true;
@@ -202,7 +202,7 @@
 		splitLargeChunks = $settings.splitLargeChunks ?? false;
 		scrollOnBranchChange = $settings.scrollOnBranchChange ?? true;
 		chatDirection = $settings.chatDirection ?? 'LTR';
-		userLocation = $settings.userLocation ?? false;
+		userLocation = Boolean($settings.userLocation ?? false);
 
 		hapticFeedback = $settings.hapticFeedback ?? false;
 

@@ -16,7 +16,6 @@
 	import { min } from '@floating-ui/utils';
 
 	export let history;
-	export let models = [];
 
 	export let chatId = null;
 
@@ -182,7 +181,6 @@
 							on:close={() => {
 								showControls.set(false);
 							}}
-							{models}
 							bind:chatFiles
 							bind:params
 						/>
@@ -269,7 +267,6 @@
 								on:close={() => {
 									showControls.set(false);
 								}}
-								{models}
 								bind:chatFiles
 								bind:params
 							/>

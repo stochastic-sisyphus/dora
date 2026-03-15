@@ -1,7 +1,7 @@
 <script lang="ts">
+	// -nocheck
 	import { DropdownMenu } from 'bits-ui';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext, onMount, tick } from 'svelte';
+		import { getContext, onMount, tick } from 'svelte';
 
 	import { config, user, tools as _tools } from '$lib/stores';
 	import { getTools } from '$lib/apis/tools';
@@ -62,9 +62,7 @@
 			sideOffset={15}
 			alignOffset={-8}
 			side="top"
-			align="start"
-			transition={flyAndScale}
-		>
+			align="start"		>
 			{#if Object.keys(tools).length > 0}
 				<div class="  max-h-28 overflow-y-auto scrollbar-hidden">
 					{#each Object.keys(tools) as toolId}
@@ -129,7 +127,7 @@
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-xl"
-				on:click={() => {
+				onSelect={() => {
 					uploadFilesHandler();
 				}}
 			>

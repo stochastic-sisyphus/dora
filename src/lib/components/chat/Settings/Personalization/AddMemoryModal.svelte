@@ -40,7 +40,7 @@
 			<div class=" text-lg font-medium self-center">
 				{$i18n.t('Add Memory')}
 			</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;
@@ -72,8 +72,7 @@
 							bind:value={content}
 							class=" bg-transparent w-full text-sm resize-none rounded-xl p-3 outline outline-1 outline-gray-100 dark:outline-gray-800"
 							rows="3"
-							placeholder={$i18n.t('Enter a detail about yourself for your LLMs to recall')}
-						/>
+							placeholder={$i18n.t('Enter a detail about yourself for your LLMs to recall')}></textarea>
 
 						<div class="text-xs text-gray-500">
 							ⓘ {$i18n.t('Refer to yourself as "User" (e.g., "User is learning Spanish")')}

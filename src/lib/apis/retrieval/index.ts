@@ -31,6 +31,8 @@ export const getRAGConfig = async (token: string) => {
 type ChunkConfigForm = {
 	chunk_size: number;
 	chunk_overlap: number;
+	text_splitter?: string;
+	[key: string]: any;
 };
 
 type ContentExtractConfigForm = {
@@ -50,6 +52,8 @@ type RAGConfigForm = {
 	content_extraction?: ContentExtractConfigForm;
 	web_loader_ssl_verification?: boolean;
 	youtube?: YoutubeConfigForm;
+	web?: Record<string, any>;
+	[key: string]: any;
 };
 
 export const updateRAGConfig = async (token: string, payload: RAGConfigForm) => {
@@ -202,6 +206,7 @@ export const getEmbeddingConfig = async (token: string) => {
 type OpenAIConfigForm = {
 	key: string;
 	url: string;
+	[key: string]: any;
 };
 
 type EmbeddingModelUpdateForm = {
@@ -209,6 +214,8 @@ type EmbeddingModelUpdateForm = {
 	embedding_engine: string;
 	embedding_model: string;
 	embedding_batch_size?: number;
+	ollama_config?: Record<string, any>;
+	[key: string]: any;
 };
 
 export const updateEmbeddingConfig = async (token: string, payload: EmbeddingModelUpdateForm) => {

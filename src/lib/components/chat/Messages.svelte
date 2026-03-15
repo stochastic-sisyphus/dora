@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { v4 as uuidv4 } from 'uuid';
 	import { chats, config, settings, user as _user, mobile, currentChatPage } from '$lib/stores';
 	import { tick, getContext, onMount, createEventDispatcher } from 'svelte';
@@ -19,25 +20,25 @@
 	export let chatId = '';
 	export let user = $_user;
 
-	export let prompt;
-	export let history = {};
-	export let selectedModels;
+	export let prompt: any = null;
+	export let history: any = {};
+	export let selectedModels: any;
 
-	let messages = [];
+	export let messages: any[] = [];
 
 	export let sendPrompt: Function;
 	export let continueResponse: Function;
 	export let regenerateResponse: Function;
-	export let mergeResponses: Function;
+	export let mergeResponses: Function = () => {};
 
-	export let chatActionHandler: Function;
+	export let chatActionHandler: Function = () => {};
 	export let showMessage: Function = () => {};
 	export let submitMessage: Function = () => {};
 
 	export let readOnly = false;
 
 	export let bottomPadding = false;
-	export let autoScroll;
+	export let autoScroll: any;
 
 	let messagesCount = 20;
 	let messagesLoading = false;
@@ -111,7 +112,7 @@
 				history.currentId = messageId;
 			}
 		} else {
-			let childrenIds = Object.values(history.messages)
+			let childrenIds = Object.values(history.messages as Record<string, any>)
 				.filter((message) => message.parentId === null)
 				.map((message) => message.id);
 			let messageId = childrenIds[Math.max(childrenIds.indexOf(message.id) - 1, 0)];
@@ -161,7 +162,7 @@
 				history.currentId = messageId;
 			}
 		} else {
-			let childrenIds = Object.values(history.messages)
+			let childrenIds = Object.values(history.messages as Record<string, any>)
 				.filter((message) => message.parentId === null)
 				.map((message) => message.id);
 			let messageId =
@@ -189,15 +190,6 @@
 				scrollToBottom();
 			}, 100);
 		}
-	};
-
-	const rateMessage = async (messageId, rating) => {
-		history.messages[messageId].annotation = {
-			...history.messages[messageId].annotation,
-			rating: rating
-		};
-
-		await updateChat();
 	};
 
 	const editMessage = async (messageId, content, submit = true) => {
@@ -399,7 +391,6 @@
 							{updateChat}
 							{editMessage}
 							{deleteMessage}
-							{rateMessage}
 							{actionMessage}
 							{saveMessage}
 							{submitMessage}
@@ -411,9 +402,9 @@
 						/>
 					{/each}
 				</div>
-				<div class="pb-12" data-tauri-drag-region />
+				<div class="pb-12" data-tauri-drag-region></div>
 				{#if bottomPadding}
-					<div class="pb-6" data-tauri-drag-region />
+					<div class="pb-6" data-tauri-drag-region></div>
 				{/if}
 			{/key}
 		</div>

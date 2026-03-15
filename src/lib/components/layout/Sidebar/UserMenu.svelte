@@ -2,8 +2,7 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { createEventDispatcher, getContext, onMount } from 'svelte';
 
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { goto } from '$app/navigation';
+		import { goto } from '$app/navigation';
 	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
 	import { showSettings, activeUserCount, USAGE_POOL, mobile, showSidebar } from '$lib/stores';
 	import { fade, slide } from 'svelte/transition';
@@ -16,7 +15,7 @@
 	export let role = '';
 	export let className = 'max-w-[240px]';
 
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<Record<string, any>>();
 </script>
 
 <DropdownMenu.Root
@@ -35,7 +34,6 @@
 			sideOffset={8}
 			side="bottom"
 			align="start"
-			transition={(e) => fade(e, { duration: 100 })}
 		>
 			<button
 				class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
@@ -196,9 +194,8 @@
 						<div class=" flex items-center">
 							<span class="relative flex size-2">
 								<span
-									class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-								/>
-								<span class="relative inline-flex rounded-full size-2 bg-green-500" />
+									class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+								<span class="relative inline-flex rounded-full size-2 bg-green-500"></span>
 							</span>
 						</div>
 

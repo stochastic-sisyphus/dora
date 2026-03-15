@@ -4,9 +4,9 @@
 	"version": "0.6.0",
 	"identifier": "com.dora-desktop.app",
 	"build": {
-		"beforeDevCommand": "pnpm run dev",
+		"beforeDevCommand": "python3 sidecar/build.py && corepack pnpm run dev",
 		"devUrl": "http://localhost:1420",
-		"beforeBuildCommand": "pnpm run build",
+		"beforeBuildCommand": "python3 sidecar/build.py && corepack pnpm run build",
 		"frontendDist": "../build"
 	},
 	"app": {
@@ -62,6 +62,7 @@
 	},
 	"bundle": {
 		"active": true,
+		"externalBin": ["binaries/dora-sidecar"],
 		"macOS": {
 			"entitlements": "Entitlements.plist",
 			"exceptionDomain": "",

@@ -98,8 +98,7 @@
 								placeholder={inputPlaceholder ? inputPlaceholder : $i18n.t('Enter your message')}
 								class="w-full mt-2 rounded-lg px-4 py-2 text-sm dark:text-gray-300 dark:bg-gray-900 outline-none resize-none"
 								rows="3"
-								required
-							/>
+								required></textarea>
 						{/if}
 					</div>
 				</slot>
@@ -131,7 +130,7 @@
 {/if}
 
 <style>
-	.modal-content {
+	:global(.modal-content) {
 		animation: scaleUp 0.1s ease-out forwards;
 	}
 

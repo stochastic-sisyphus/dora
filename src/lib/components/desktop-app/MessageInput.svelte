@@ -44,15 +44,15 @@
 	export let stopResponse: Function;
 	export let autoScroll = false;
 	export let atSelectedModel: Model | undefined;
-	export let selectedModels: [''];
-	export let history;
+	export let selectedModels: string[] = [''];
+	export let history: any;
 	export let prompt = '';
-	export let files = [];
-	export let selectedToolIds = [];
+	export let files: any[] = [];
+	export let selectedToolIds: string[] = [];
 	export let webSearchEnabled = false;
 	export let placeholder = '';
 
-	let selectedModelIds = [];
+	let selectedModelIds: string[] = [];
 	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
 
 	let loaded = false;
@@ -69,7 +69,8 @@
 
 	let user = null;
 
-	let visionCapableModels = [];
+	let visionCapableModels: any[] = [];
+	$: chatDirection = (($settings?.chatDirection ?? 'LTR').toLowerCase() as 'ltr' | 'rtl' | 'auto');
 	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
@@ -270,11 +271,12 @@
 						<div
 							class=" absolute -top-12 left-0 right-0 flex justify-center z-30 pointer-events-none"
 						>
-							<button
-								class=" bg-white border border-gray-100 dark:border-none dark:bg-white/20 p-1.5 rounded-full pointer-events-auto"
-								on:click={() => {
-									autoScroll = true;
-									scrollToBottom();
+								<button
+									class=" bg-white border border-gray-100 dark:border-none dark:bg-white/20 p-1.5 rounded-full pointer-events-auto"
+									aria-label={$i18n.t('Scroll to bottom')}
+									on:click={() => {
+										autoScroll = true;
+										scrollToBottom();
 								}}
 							>
 								<svg
@@ -305,9 +307,8 @@
 										<div class="pl-1">
 											<span class="relative flex size-2">
 												<span
-													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"
-												/>
-												<span class="relative inline-flex rounded-full size-2 bg-yellow-500" />
+													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+												<span class="relative inline-flex rounded-full size-2 bg-yellow-500"></span>
 											</span>
 										</div>
 										<div class=" translate-y-[0.5px] text-ellipsis line-clamp-1 flex">
@@ -337,9 +338,8 @@
 										<div class="pl-1">
 											<span class="relative flex size-2">
 												<span
-													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-												/>
-												<span class="relative inline-flex rounded-full size-2 bg-green-500" />
+													class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+												<span class="relative inline-flex rounded-full size-2 bg-green-500"></span>
 											</span>
 										</div>
 										<div class=" translate-y-[0.5px]">{$i18n.t('Search the web')}</div>
@@ -456,7 +456,7 @@
 						>
 							<div
 								class="flex-1 flex flex-col relative w-full rounded-3xl px-1 bg-gray-50 dark:bg-gray-400/5 dark:text-gray-100"
-								dir={$settings?.chatDirection ?? 'LTR'}
+								dir={chatDirection}
 							>
 								{#if files.length > 0}
 									<div class="mx-1 mt-2.5 mb-1 flex flex-wrap gap-2">
@@ -496,12 +496,13 @@
 														{/if}
 													</div>
 													<div class=" absolute -top-1 -right-1">
-														<button
-															class=" bg-gray-400 text-white border border-white rounded-full group-hover:visible invisible transition"
-															type="button"
-															on:click={() => {
-																files.splice(fileIdx, 1);
-																files = files;
+															<button
+																class=" bg-gray-400 text-white border border-white rounded-full group-hover:visible invisible transition"
+																type="button"
+																aria-label={$i18n.t('Remove file')}
+																on:click={() => {
+																	files.splice(fileIdx, 1);
+																	files = files;
 															}}
 														>
 															<svg
@@ -572,7 +573,6 @@
 											</button>
 										</InputMenu>
 										<OptionsMenu
-											id={''}
 											bind:selectedModels
 											onClose={async () => {
 												await tick();
@@ -991,8 +991,7 @@
 														}
 													}
 												}
-											}}
-										/>
+											}}></textarea>
 									{/if}
 
 									<div class="self-end mb-1.5 flex space-x-1 mr-1">
@@ -1100,13 +1099,14 @@
 											{:else}
 												<div class=" flex items-center">
 													<Tooltip content={$i18n.t('Send message')}>
-														<button
-															id="send-message-button"
-															class="{prompt !== ''
-																? 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 '
-																: 'text-white bg-gray-200 dark:text-gray-900 dark:bg-gray-700 disabled'} transition rounded-full p-1.5 self-center"
-															type="submit"
-															disabled={prompt === ''}
+															<button
+																id="send-message-button"
+																class="{prompt !== ''
+																	? 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 '
+																	: 'text-white bg-gray-200 dark:text-gray-900 dark:bg-gray-700 disabled'} transition rounded-full p-1.5 self-center"
+																type="submit"
+																aria-label={$i18n.t('Send message')}
+																disabled={prompt === ''}
 														>
 															<svg
 																xmlns="http://www.w3.org/2000/svg"
@@ -1127,10 +1127,11 @@
 										{:else}
 											<div class=" flex items-center">
 												<Tooltip content={$i18n.t('Stop')}>
-													<button
-														class="bg-white hover:bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-800 transition rounded-full p-1.5"
-														on:click={() => {
-															stopResponse();
+														<button
+															class="bg-white hover:bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-800 transition rounded-full p-1.5"
+															aria-label={$i18n.t('Stop')}
+															on:click={() => {
+																stopResponse();
 														}}
 													>
 														<svg

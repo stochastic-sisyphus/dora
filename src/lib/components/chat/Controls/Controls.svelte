@@ -10,9 +10,8 @@
 	import Collapsible from '$lib/components/common/Collapsible.svelte';
 
 	import { user } from '$lib/stores';
-	export let models = [];
-	export let chatFiles = [];
-	export let params = {};
+export let chatFiles = [];
+export let params: any = {};
 
 	let showValves = false;
 </script>
@@ -75,8 +74,7 @@
 					bind:value={params.system}
 					class="w-full text-xs py-1.5 bg-transparent outline-none resize-none"
 					rows="4"
-					placeholder={$i18n.t('Enter system prompt')}
-				/>
+					placeholder={$i18n.t('Enter system prompt')}></textarea>
 			</div>
 		</Collapsible>
 

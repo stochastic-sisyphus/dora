@@ -1,7 +1,7 @@
 /**
  * Universal Sidecar Types
  * 
- * The sidecar works standalone or connected to any ledger backend.
+ * The sidecar works standalone or connected to an optional core backend.
  * Configuration is optional and independent from Chat UI config.
  */
 
@@ -13,9 +13,8 @@ export interface SidecarConfig {
     // LLM endpoint (any OpenAI/Anthropic-compatible API)
     llmEndpoint?: LLMEndpoint;
     
-    // Ledger connection (optional persistence)
-    // Universal - works with any backend implementing the ledger protocol
-    ledger?: LedgerConfig;
+    // Core endpoint (optional persistence / validation chokepoint)
+    core?: CoreEndpoint;
     
     // Webhook for notifications (optional)
     webhook?: WebhookConfig;
@@ -37,34 +36,13 @@ export interface LLMEndpoint {
     model?: string;
     provider?: 'openai' | 'anthropic' | 'custom';
     systemPrompt?: string;
+    headers?: Record<string, string>;
 }
 
-// Ledger configuration - universal, backend-agnostic
-export interface LedgerConfig {
-    // Backend type identifier (for adapter selection)
-    // Examples: 'sqlite', 'postgres', 'temporal', 'custom-adapter-name'
-    type: string;
-    
-    // Connection string or endpoint
-    // Examples:
-    //   - SQLite: "file:///path/to/ledger.db"
-    //   - PostgreSQL: "postgresql://user:pass@host:5432/dbname"
-    //   - HTTP API: "https://ledger.example.com/api"
-    //   - gRPC: "grpc://ledger.example.com:50051"
-    connection: string;
-    
-    // Optional adapter-specific configuration
-    adapterConfig?: Record<string, any>;
-    
-    // Optional authentication
-    auth?: {
-        type: 'bearer' | 'basic' | 'apikey' | 'custom';
-        token?: string;
-        username?: string;
-        password?: string;
-        apiKey?: string;
-        headers?: Record<string, string>;
-    };
+export interface CoreEndpoint {
+    url: string;
+    apiKey?: string;
+    headers?: Record<string, string>;
 }
 
 // Webhook configuration
@@ -130,7 +108,7 @@ export interface Contradiction {
 export interface SearchResults {
     query: string;
     results: SearchResult[];
-    logged?: boolean;  // Whether results were logged to ledger
+    logged?: boolean;
 }
 
 export interface SearchResult {
@@ -140,25 +118,32 @@ export interface SearchResult {
     score?: number;
 }
 
+export interface BrowseResult {
+    url: string;
+    title: string;
+    content: string;
+    excerpt?: string;
+}
+
+export interface RenderedContent {
+    type: string;
+    content: string;
+    preview: string;
+    wordCount: number;
+    lineCount: number;
+}
+
 // IPC message types (stdin/stdout protocol)
 export interface SidecarRequest {
     id: string;
-    type: 'search' | 'extract' | 'browse' | 'render' | 'log' | 'query';
+    type: 'search' | 'extract' | 'browse' | 'render' | 'ping';
     payload: any;
     config?: SidecarConfig;
 }
 
 export interface SidecarResponse {
     id: string;
-    type: 'results' | 'error' | 'logged' | 'rendered';
+    type: 'results' | 'error';
     data?: any;
     error?: string;
-}
-
-// Ledger adapter interface - any backend can implement this
-export interface LedgerAdapter {
-    connect(config: LedgerConfig): Promise<void>;
-    append(entry: LedgerEntry): Promise<string>;
-    query(region: RegionQuery): Promise<LedgerEntry[]>;
-    close(): Promise<void>;
 }

@@ -22,7 +22,7 @@ export default async function openNavigator(): Promise<void> {
 				title: 'Research',
 				width: 1200,
 				height: 800,
-				titleBarStyle: 'Overlay',
+				titleBarStyle: 'overlay',
 				hiddenTitle: true,
 				resizable: true,
 				minimizable: true

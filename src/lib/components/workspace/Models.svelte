@@ -149,11 +149,7 @@
 		saveAs(blob, `${model.id}-${Date.now()}.json`);
 	};
 
-	onMount(async () => {
-		models = await getWorkspaceModels(localStorage.token);
-
-		loaded = true;
-
+	onMount(() => {
 		const onKeyDown = (event) => {
 			if (event.key === 'Shift') {
 				shiftKey = true;
@@ -173,6 +169,11 @@
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
 		window.addEventListener('blur', onBlur);
+
+		void (async () => {
+			models = await getWorkspaceModels(localStorage.token);
+			loaded = true;
+		})();
 
 		return () => {
 			window.removeEventListener('keydown', onKeyDown);
@@ -200,7 +201,7 @@
 		<div class="flex justify-between items-center">
 			<div class="flex items-center md:self-center text-xl font-medium px-0.5">
 				{$i18n.t('Models')}
-				<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850" />
+				<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850"></div>
 				<span class="text-lg font-medium text-gray-500 dark:text-gray-300"
 					>{filteredModels.length}</span
 				>
@@ -312,6 +313,8 @@
 								<a
 									class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 									type="button"
+									aria-label={$i18n.t('Edit')}
+									title={$i18n.t('Edit')}
 									href={`/workspace/models/edit?id=${encodeURIComponent(model.id)}`}
 								>
 									<svg
@@ -332,8 +335,6 @@
 							{/if}
 
 							<ModelMenu
-								user={$user}
-								{model}
 								shareHandler={() => {
 									shareModelHandler(model);
 								}}
@@ -342,9 +343,6 @@
 								}}
 								exportHandler={() => {
 									exportModelHandler(model);
-								}}
-								hideHandler={() => {
-									hideModelHandler(model);
 								}}
 								deleteHandler={() => {
 									selectedModel = model;
@@ -393,7 +391,7 @@
 
 						let reader = new FileReader();
 						reader.onload = async (event) => {
-							let savedModels = JSON.parse(event.target.result);
+							let savedModels = JSON.parse(String(event.target?.result ?? ''));
 							console.log(savedModels);
 
 							for (const model of savedModels) {

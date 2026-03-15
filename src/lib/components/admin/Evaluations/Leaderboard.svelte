@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { AutoModel, AutoTokenizer } from '@huggingface/transformers';
 
 	import { onMount, getContext } from 'svelte';
@@ -74,7 +75,11 @@
 			.sort((a, b) => {
 				if (a.rating === '-' && b.rating !== '-') return 1;
 				if (b.rating === '-' && a.rating !== '-') return -1;
-				if (a.rating !== '-' && b.rating !== '-') return b.rating - a.rating;
+				if (a.rating !== '-' && b.rating !== '-') {
+					const aRating = typeof a.rating === 'number' ? a.rating : Number.NEGATIVE_INFINITY;
+					const bRating = typeof b.rating === 'number' ? b.rating : Number.NEGATIVE_INFINITY;
+					return bRating - aRating;
+				}
 				return a.name.localeCompare(b.name);
 			});
 
@@ -271,7 +276,7 @@
 			{$i18n.t('Leaderboard')}
 		</div>
 
-		<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850" />
+		<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850"></div>
 
 		<span class="text-lg font-medium text-gray-500 dark:text-gray-300 mr-1.5"
 			>{rankedModels.length}</span

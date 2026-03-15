@@ -48,6 +48,8 @@
 		} else if ($user === undefined) {
 			await goto('/auth');
 		} else if (['user', 'admin'].includes($user.role)) {
+			const compatibilityMode = Boolean($config?.compatibility_mode);
+
 			try {
 				// Check if IndexedDB exists
 				DB = await openDB('Chats', 1);
@@ -85,8 +87,23 @@
 				settings.set(localStorageSettings);
 			}
 
-			models.set(await getModels(localStorage.token));
-			banners.set(await getBanners(localStorage.token));
+			// Compatibility mode is runtime-only; do not leave temporary chat persisted from startup.
+			if (compatibilityMode && $temporaryChatEnabled) {
+				temporaryChatEnabled.set(false);
+			}
+
+			models.set(
+				await getModels(localStorage.token).catch((error) => {
+					console.error(error);
+					return [];
+				})
+			);
+			banners.set(
+				await getBanners(localStorage.token).catch((error) => {
+					console.error(error);
+					return [];
+				})
+			);
 			tools.set(await getTools(localStorage.token));
 
 			document.addEventListener('keydown', async function (event) {
@@ -161,30 +178,31 @@
 				if (isCtrlPressed && isShiftPressed && event.key.toLowerCase() === `'`) {
 					event.preventDefault();
 					console.log('temporaryChat');
-					temporaryChatEnabled.set(!$temporaryChatEnabled);
-					await goto('/');
-					const newChatButton = document.getElementById('new-chat-button');
-					setTimeout(() => {
-						newChatButton?.click();
-					}, 0);
+					if (!compatibilityMode) {
+						temporaryChatEnabled.set(!$temporaryChatEnabled);
+						await goto('/');
+						const newChatButton = document.getElementById('new-chat-button');
+						setTimeout(() => {
+							newChatButton?.click();
+						}, 0);
+					}
 				}
 
 			});
 
-			if ($user.role === 'admin' && ($settings?.showChangelog ?? true)) {
+			if (!compatibilityMode && $user.role === 'admin' && ($settings?.showChangelog ?? true)) {
 				showChangelog.set($settings?.version !== $config.version);
 			}
 
-			if ($page.url.searchParams.get('temporary-chat') === 'true') {
+			if (!compatibilityMode && $page.url.searchParams.get('temporary-chat') === 'true') {
 				temporaryChatEnabled.set(true);
 			}
-
 			// Check for version updates
 			if ($user.role === 'admin') {
 				// Check if the user has dismissed the update toast in the last 24 hours
 				if (localStorage.dismissedUpdateToast) {
-					const dismissedUpdateToast = new Date(Number(localStorage.dismissedUpdateToast));
-					const now = new Date();
+					const dismissedUpdateToast = Number(localStorage.dismissedUpdateToast);
+					const now = Date.now();
 
 					if (now - dismissedUpdateToast > 24 * 60 * 60 * 1000) {
 						checkForVersionUpdates();
@@ -200,7 +218,7 @@
 	});
 
 	const checkForVersionUpdates = async () => {
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
+		version = await getVersionUpdates().catch((error) => {
 			return {
 				current: WEBUI_VERSION,
 				latest: WEBUI_VERSION
@@ -286,7 +304,9 @@
 					</div>
 				{/if}
 
-				<Sidebar />
+				{#if !$config?.compatibility_mode}
+					<Sidebar />
+				{/if}
 				<slot />
 			{/if}
 		</div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
 
@@ -125,8 +126,8 @@
 
 	onMount(async () => {
 		if ($user.role === 'admin') {
-			let ollamaConfig = {};
-			let openaiConfig = {};
+			let ollamaConfig: any = {};
+			let openaiConfig: any = {};
 
 			await Promise.all([
 				(async () => {

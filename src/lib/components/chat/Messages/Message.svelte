@@ -27,7 +27,6 @@
 	export let editMessage;
 	export let saveMessage;
 	export let deleteMessage;
-	export let rateMessage;
 	export let actionMessage;
 	export let submitMessage;
 
@@ -54,7 +53,7 @@
 				isFirstMessage={idx === 0}
 				siblings={history.messages[messageId].parentId !== null
 					? (history.messages[history.messages[messageId].parentId]?.childrenIds ?? [])
-					: (Object.values(history.messages)
+					: (Object.values(history.messages as Record<string, any>)
 							.filter((message) => message.parentId === null)
 							.map((message) => message.id) ?? [])}
 				{showPreviousMessage}
@@ -75,7 +74,6 @@
 				{updateChat}
 				{editMessage}
 				{saveMessage}
-				{rateMessage}
 				{actionMessage}
 				{submitMessage}
 				{continueResponse}
@@ -91,7 +89,6 @@
 				{updateChat}
 				{editMessage}
 				{saveMessage}
-				{rateMessage}
 				{actionMessage}
 				{submitMessage}
 				{continueResponse}

@@ -18,39 +18,51 @@
 	export let loading = false;
 
 	export let item = null;
+	export let file = null;
 	export let edit = false;
 	export let small = false;
+
+	$: if (file && !item) {
+		item = file;
+	}
 
 	export let name: string;
 	export let type: string;
 	export let size: number;
 
 	let showModal = false;
+
+	const openItem = () => {
+		if (item?.file?.data?.content) {
+			showModal = !showModal;
+		} else if (url) {
+			if (type === 'file') {
+				window.open(`${url}/content`, '_blank')?.focus();
+			} else {
+				window.open(`${url}`, '_blank')?.focus();
+			}
+		}
+
+		dispatch('click');
+	};
 </script>
 
 {#if item}
 	<FileItemModal bind:show={showModal} bind:item {edit} />
 {/if}
 
-<button
+<div
 	class="relative group p-1.5 {className} flex items-center gap-1 {colorClassName} {small
 		? 'rounded-xl'
 		: 'rounded-2xl'} text-left"
-	type="button"
-	on:click={async () => {
-		if (item?.file?.data?.content) {
-			showModal = !showModal;
-		} else {
-			if (url) {
-				if (type === 'file') {
-					window.open(`${url}/content`, '_blank').focus();
-				} else {
-					window.open(`${url}`, '_blank').focus();
-				}
-			}
+	role="button"
+	tabindex="0"
+	on:click={openItem}
+	on:keydown={(event) => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			openItem();
 		}
-
-		dispatch('click');
 	}}
 >
 	{#if !small}
@@ -116,12 +128,13 @@
 
 	{#if dismissible}
 		<div class=" absolute -top-1 -right-1">
-			<button
-				class=" bg-gray-400 text-white border border-white rounded-full group-hover:visible invisible transition"
-				type="button"
-				on:click|stopPropagation={() => {
-					dispatch('dismiss');
-				}}
+				<button
+					class=" bg-gray-400 text-white border border-white rounded-full group-hover:visible invisible transition"
+					type="button"
+					aria-label={$i18n.t('Remove file')}
+					on:click|stopPropagation={() => {
+						dispatch('dismiss');
+					}}
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -145,4 +158,4 @@
 			</button> -->
 		</div>
 	{/if}
-</button>
+</div>
