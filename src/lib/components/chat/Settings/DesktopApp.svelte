@@ -3,7 +3,7 @@
 	import type { ChatBarPosition, ResetChatTime } from '$lib/app/state';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
-	import { appConfig, WEBUI_BASE_URL } from '$lib/stores';
+	import { appConfig, COMPATIBLE_SERVER_URL } from '$lib/stores';
 	import { delay } from '$lib/utils';
 	import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 	import * as autoStart from '@tauri-apps/plugin-autostart';
@@ -72,7 +72,8 @@
 	const openLinksInAppChangeHandler = () => {};
 
 	let openrouterApiKey = '';
-
+	let searxngUrl = '';
+	let surrealdbUrl = '';
 	let showConfirmDialog = false;
 
 	const webUIBaseURLChangeHandler = async () => {
@@ -82,7 +83,7 @@
 
 	const handleConfirm = async () => {
 		await getCurrentWebviewWindow().clearAllBrowsingData();
-		$WEBUI_BASE_URL = '';
+		$COMPATIBLE_SERVER_URL = '';
 		window.location.href = '/setup';
 	};
 
@@ -121,7 +122,7 @@
 			resetChatTimePreference: resetToNewChat,
 			openChatsInCompanion: openNewChatsInCompanion === 'true',
 			openLinksInApp,
-			substrate: { ...$appConfig.substrate, openrouterApiKey }
+			substrate: { ...$appConfig.substrate, openrouterApiKey, searxngUrl, surrealdbUrl }
 		};
 
 		console.debug('After:', $appConfig);
@@ -136,6 +137,8 @@
 		launchAtLogin = await autoStart.isEnabled();
 		openLinksInApp = $appConfig.openLinksInApp;
 		openrouterApiKey = $appConfig?.substrate?.openrouterApiKey ?? '';
+		searxngUrl = $appConfig?.substrate?.searxngUrl ?? '';
+		surrealdbUrl = $appConfig?.substrate?.surrealdbUrl ?? '';
 	});
 </script>
 
@@ -206,7 +209,7 @@
 
 		<div class=" flex w-full justify-between">
 			<div class=" self-center text-xs font-medium">
-				{$i18n.t('Open Open WebUI Links in Desktop App')}
+				{$i18n.t('Open Compatible Server Links in Desktop App')}
 			</div>
 			<div class="flex items-center relative">
 				<div class="mt-1">
@@ -224,6 +227,34 @@
 			<div class="flex items-center relative">
 				<div class="mt-1">
 					<Switch bind:state={launchAtLogin} on:change={launchAtLoginChangeHandler} />
+				</div>
+			</div>
+			
+			<!-- SearXNG URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">SearXNG URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://search.your-domain.com"
+					bind:value={searxngUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Your self-hosted SearXNG instance URL for research searches
+				</div>
+			</div>
+			
+			<!-- SurrealDB URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">SurrealDB URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://sync.your-domain.com"
+					bind:value={surrealdbUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Your SurrealDB instance URL for data synchronization
 				</div>
 			</div>
 		</div>
@@ -245,6 +276,34 @@
 					{$i18n.t('Used for structured extraction in the research panel.')}
 				</div>
 			</div>
+			
+			<!-- SearXNG URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">SearXNG URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://search.your-domain.com"
+					bind:value={searxngUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Your self-hosted SearXNG instance URL for research searches
+				</div>
+			</div>
+			
+			<!-- SurrealDB URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">SurrealDB URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://sync.your-domain.com"
+					bind:value={surrealdbUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Your SurrealDB instance URL for data synchronization
+				</div>
+			</div>
 		</div>
 
 		<hr class=" dark:border-gray-850 my-3" />
@@ -256,7 +315,7 @@
 					<input
 						type="text"
 						readonly
-						value={$WEBUI_BASE_URL}
+						value={$COMPATIBLE_SERVER_URL}
 						class="text-xs px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-850 dark:text-gray-200 focus:outline-none pr-24"
 					/>
 					<button
@@ -281,7 +340,7 @@
 
 <ConfirmDialog
 	bind:show={showConfirmDialog}
-	title="Change Open WebUI Base URL"
-	message="Are you sure you want to change the Open WebUI base URL?"
+	title="Change Compatible Server Base URL"
+	message="Are you sure you want to change the Compatible Server base URL?"
 	onConfirm={handleConfirm}
 />
