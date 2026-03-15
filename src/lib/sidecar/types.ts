@@ -43,9 +43,8 @@ export interface LLMEndpoint {
 export interface LedgerConfig {
     // SQLite: local, file-based, no server needed (default)
     // PostgreSQL: shared, multi-user, requires server
-    // Temporal: workflow orchestration (uses PostgreSQL internally)
     // Custom: any backend implementing the ledger protocol
-    type: 'sqlite' | 'postgres' | 'temporal' | 'custom';
+    type: 'sqlite' | 'postgres' | 'custom';
     connection: string;  // File path for SQLite, connection string for others
 }
 
