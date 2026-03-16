@@ -53,7 +53,7 @@
 		<div class=" text-lg font-medium self-center capitalize">
 			{$i18n.t("{{user}}'s Chats", { user: user.name })}
 		</div>
-		<button
+		<button aria-label="Action"
 			class="self-center"
 			on:click={() => {
 				show = false;
@@ -107,7 +107,7 @@
 												<span class="invisible">▲</span>
 											{/if}
 										</th>
-										<th scope="col" class="px-3 py-2 text-right" />
+										<th scope="col" class="px-3 py-2 text-right"></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -137,7 +137,7 @@
 											<td class="px-3 py-1 text-right">
 												<div class="flex justify-end w-full">
 													<Tooltip content={$i18n.t('Delete Chat')}>
-														<button
+														<button aria-label={$i18n.t('Delete Chat')}
 															class="self-center w-fit text-sm px-2 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 															on:click={async () => {
 																deleteChatHandler(chat.id);

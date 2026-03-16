@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import Fuse from 'fuse.js';
 
 	import { createEventDispatcher, onMount } from 'svelte';

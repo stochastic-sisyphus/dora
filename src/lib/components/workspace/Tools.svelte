@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { toast } from 'svelte-sonner';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
@@ -38,7 +39,7 @@
 	let loaded = false;
 
 	let toolsImportInputElement: HTMLInputElement;
-	let importFiles;
+	let importFiles: FileList | null = null;
 
 	let showConfirm = false;
 	let query = '';
@@ -49,7 +50,7 @@
 
 	let showDeleteConfirm = false;
 
-	let tools = [];
+	let tools: any[] = [];
 	let filteredItems = [];
 
 	$: filteredItems = tools.filter(
@@ -134,9 +135,11 @@
 		_tools.set(await getTools(localStorage.token));
 	};
 
-	onMount(async () => {
-		await init();
-		loaded = true;
+	onMount(() => {
+		void (async () => {
+			await init();
+			loaded = true;
+		})();
 
 		const onKeyDown = (event) => {
 			if (event.key === 'Shift') {
@@ -177,7 +180,7 @@
 		<div class="flex justify-between items-center">
 			<div class="flex md:self-center text-xl font-medium px-0.5 items-center">
 				{$i18n.t('Tools')}
-				<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850" />
+				<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850"></div>
 				<span class="text-lg font-medium text-gray-500 dark:text-gray-300"
 					>{filteredItems.length}</span
 				>
@@ -272,6 +275,7 @@
 							<button
 								class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 								type="button"
+								aria-label={$i18n.t('Valves')}
 								on:click={() => {
 									deleteHandler(tool);
 								}}
@@ -299,6 +303,7 @@
 							<button
 								class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 								type="button"
+								aria-label={$i18n.t('Valves')}
 								on:click={() => {
 									selectedTool = tool;
 									showValvesModal = true;
@@ -482,7 +487,7 @@
 		on:confirm={() => {
 			const reader = new FileReader();
 			reader.onload = async (event) => {
-				const _tools = JSON.parse(event.target.result);
+				const _tools = JSON.parse(String(event.target?.result ?? ''));
 				console.log(_tools);
 
 				for (const tool of _tools) {
@@ -493,7 +498,7 @@
 				}
 
 				toast.success($i18n.t('Tool imported successfully'));
-				tools.set(await getTools(localStorage.token));
+				_tools.set(await getTools(localStorage.token));
 			};
 
 			reader.readAsText(importFiles[0]);

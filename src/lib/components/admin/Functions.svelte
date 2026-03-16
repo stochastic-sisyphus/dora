@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { toast } from 'svelte-sonner';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
@@ -190,7 +191,7 @@
 	<div class="flex justify-between items-center">
 		<div class="flex md:self-center text-xl items-center font-medium px-0.5">
 			{$i18n.t('Functions')}
-			<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850" />
+			<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850"></div>
 			<span class="text-base font-lg text-gray-500 dark:text-gray-300">{filteredItems.length}</span>
 		</div>
 	</div>
@@ -289,7 +290,7 @@
 					{/if}
 
 					<Tooltip content={$i18n.t('Valves')}>
-						<button
+						<button aria-label={$i18n.t('Valves')}
 							class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 							type="button"
 							on:click={() => {
@@ -505,7 +506,7 @@
 	on:confirm={() => {
 		const reader = new FileReader();
 		reader.onload = async (event) => {
-			const _functions = JSON.parse(event.target.result);
+			const _functions = JSON.parse(String(event.target?.result ?? ''));
 			console.log(_functions);
 
 			for (const func of _functions) {

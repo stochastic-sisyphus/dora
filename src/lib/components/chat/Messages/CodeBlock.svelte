@@ -22,7 +22,7 @@
 	export let save = false;
 	export let run = true;
 
-	export let token;
+	export let token: any = '';
 	export let lang = '';
 	export let code = '';
 
@@ -376,8 +376,7 @@ __builtins__.input = input`);
 
 			<div
 				id="plt-canvas-{id}"
-				class="bg-[#202123] text-white max-w-full overflow-x-auto scrollbar-hidden"
-			/>
+				class="bg-[#202123] text-white max-w-full overflow-x-auto scrollbar-hidden"></div>
 
 			{#if executing}
 				<div class="bg-[#202123] text-white px-4 py-4 rounded-b-lg">

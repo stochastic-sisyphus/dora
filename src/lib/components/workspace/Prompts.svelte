@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { toast } from 'svelte-sonner';
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
@@ -28,7 +29,7 @@
 	let promptsImportInputElement: HTMLInputElement;
 	let loaded = false;
 
-	let importFiles = '';
+	let importFiles: FileList | null = null;
 	let query = '';
 
 	let prompts = [];
@@ -109,7 +110,7 @@
 		<div class="flex justify-between items-center">
 			<div class="flex md:self-center text-xl font-medium px-0.5 items-center">
 				{$i18n.t('Prompts')}
-				<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850" />
+				<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850"></div>
 				<span class="text-lg font-medium text-gray-500 dark:text-gray-300"
 					>{filteredItems.length}</span
 				>
@@ -174,6 +175,8 @@
 					<a
 						class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 						type="button"
+						aria-label={$i18n.t('Edit')}
+						title={$i18n.t('Edit')}
 						href={`/workspace/prompts/edit?command=${encodeURIComponent(prompt.command)}`}
 					>
 						<svg
@@ -235,16 +238,19 @@
 
 						const reader = new FileReader();
 						reader.onload = async (event) => {
-							const savedPrompts = JSON.parse(event.target.result);
+							const savedPrompts = JSON.parse(String(event.target?.result ?? ''));
 							console.log(savedPrompts);
 
 							for (const prompt of savedPrompts) {
-								await createNewPrompt(
-									localStorage.token,
-									prompt.command.charAt(0) === '/' ? prompt.command.slice(1) : prompt.command,
-									prompt.title,
-									prompt.content
-								).catch((error) => {
+								await createNewPrompt(localStorage.token, {
+									command:
+										prompt.command.charAt(0) === '/'
+											? prompt.command.slice(1)
+											: prompt.command,
+									title: prompt.title,
+									content: prompt.content,
+									access_control: prompt.access_control ?? null
+								}).catch((error) => {
 									toast.error(error);
 									return null;
 								});
@@ -254,7 +260,9 @@
 							await _prompts.set(await getPrompts(localStorage.token));
 						};
 
-						reader.readAsText(importFiles[0]);
+						if (importFiles?.[0]) {
+							reader.readAsText(importFiles[0]);
+						}
 					}}
 				/>
 

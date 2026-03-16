@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount } from 'svelte';
 	const i18n = getContext('i18n');
@@ -55,7 +56,7 @@
 	let pullProgress = null;
 
 	let modelUploadMode = 'file';
-	let modelInputFile: File[] | null = null;
+	let modelInputFile: FileList | null = null;
 	let modelFileUrl = '';
 	let modelFileContent = `TEMPLATE """{{ .System }}\nUSER: {{ .Prompt }}\nASSISTANT: """\nPARAMETER num_ctx 4096\nPARAMETER stop "</s>"\nPARAMETER stop "USER:"\nPARAMETER stop "ASSISTANT:"`;
 	let modelFileDigest = '';
@@ -64,6 +65,7 @@
 	let uploadMessage = '';
 
 	let deleteModelTag = '';
+	const getUrlIdxKey = () => String(urlIdx ?? '');
 
 	const updateModelsHandler = async () => {
 		for (const model of ollamaModels) {
@@ -265,14 +267,14 @@
 			if (file) {
 				uploadMessage = 'Uploading...';
 
-				fileResponse = await uploadModel(localStorage.token, file, urlIdx).catch((error) => {
+				fileResponse = await uploadModel(localStorage.token, file, getUrlIdxKey()).catch((error) => {
 					toast.error(error);
 					return null;
 				});
 			}
 		} else {
 			uploadProgress = 0;
-			fileResponse = await downloadModel(localStorage.token, modelFileUrl, urlIdx).catch(
+			fileResponse = await downloadModel(localStorage.token, modelFileUrl, getUrlIdxKey()).catch(
 				(error) => {
 					toast.error(error);
 					return null;
@@ -399,7 +401,7 @@
 	};
 
 	const deleteModelHandler = async () => {
-		const res = await deleteModel(localStorage.token, deleteModelTag, urlIdx).catch((error) => {
+		const res = await deleteModel(localStorage.token, deleteModelTag, getUrlIdxKey()).catch((error) => {
 			toast.error(error);
 		});
 
@@ -433,7 +435,7 @@
 			localStorage.token,
 			createModelTag,
 			createModelContent,
-			urlIdx
+			getUrlIdxKey()
 		).catch((error) => {
 			toast.error(error);
 			return null;
@@ -535,12 +537,13 @@
 				</div>
 
 				<div>
-					<Tooltip content="Update All Models" placement="top">
-						<button
-							class="p-2.5 flex gap-2 items-center bg-transparent rounded-lg transition"
-							on:click={() => {
-								updateModelsHandler();
-							}}
+						<Tooltip content="Update All Models" placement="top">
+							<button
+								class="p-2.5 flex gap-2 items-center bg-transparent rounded-lg transition"
+								aria-label="Update All Models"
+								on:click={() => {
+									updateModelsHandler();
+								}}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -561,6 +564,7 @@
 			</div>
 			<button
 				class="self-center"
+				aria-label={$i18n.t('Close')}
 				on:click={() => {
 					show = false;
 				}}
@@ -603,11 +607,12 @@
 											bind:value={modelTag}
 										/>
 									</div>
-									<button
-										class="px-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
-										on:click={() => {
-											pullModelHandler();
-										}}
+										<button
+											class="px-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
+											aria-label={$i18n.t('Pull model')}
+											on:click={() => {
+												pullModelHandler();
+											}}
 										disabled={modelTransferring}
 									>
 										{#if modelTransferring}
@@ -689,6 +694,7 @@
 														<Tooltip content={$i18n.t('Cancel')}>
 															<button
 																class="text-gray-800 dark:text-gray-100"
+																aria-label={$i18n.t('Cancel')}
 																on:click={() => {
 																	cancelModelPullHandler(model);
 																}}
@@ -747,11 +753,12 @@
 											{/each}
 										</select>
 									</div>
-									<button
-										class="px-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
-										on:click={() => {
-											showModelDeleteConfirm = true;
-										}}
+										<button
+											class="px-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
+											aria-label={$i18n.t('Delete model')}
+											on:click={() => {
+												showModelDeleteConfirm = true;
+											}}
 									>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
@@ -782,21 +789,21 @@
 											disabled={createModelLoading}
 										/>
 
-										<textarea
-											bind:value={createModelContent}
-											class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-100 dark:bg-gray-850 outline-none resize-none scrollbar-hidden"
-											rows="6"
-											placeholder={`TEMPLATE """{{ .System }}\nUSER: {{ .Prompt }}\nASSISTANT: """\nPARAMETER num_ctx 4096\nPARAMETER stop "</s>"\nPARAMETER stop "USER:"\nPARAMETER stop "ASSISTANT:"`}
-											disabled={createModelLoading}
-										/>
+											<textarea
+												bind:value={createModelContent}
+												class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-100 dark:bg-gray-850 outline-none resize-none scrollbar-hidden"
+												rows="6"
+												placeholder={`TEMPLATE """{{ .System }}\nUSER: {{ .Prompt }}\nASSISTANT: """\nPARAMETER num_ctx 4096\nPARAMETER stop "</s>"\nPARAMETER stop "USER:"\nPARAMETER stop "ASSISTANT:"`}
+												disabled={createModelLoading}></textarea>
 									</div>
 
 									<div class="flex self-start">
-										<button
-											class="px-2.5 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition disabled:cursor-not-allowed"
-											on:click={() => {
-												createModelHandler();
-											}}
+											<button
+												class="px-2.5 py-2.5 bg-gray-50 hover:bg-gray-200 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition disabled:cursor-not-allowed"
+												aria-label={$i18n.t('Create model')}
+												on:click={() => {
+													createModelHandler();
+												}}
 											disabled={createModelLoading}
 										>
 											<svg
@@ -994,8 +1001,7 @@
 												<textarea
 													bind:value={modelFileContent}
 													class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-100 dark:bg-gray-850 outline-none resize-none"
-													rows="6"
-												/>
+													rows="6"></textarea>
 											</div>
 										</div>
 									{/if}

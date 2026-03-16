@@ -2,31 +2,29 @@
 	import DOMPurify from 'dompurify';
 
 	import { onDestroy } from 'svelte';
-	import { marked } from 'marked';
 
 	import tippy from 'tippy.js';
-	import { roundArrow } from 'tippy.js';
 
-	export let placement = 'top';
+	export let placement: any = 'top';
 	export let content = `I'm a tooltip!`;
 	export let touch = true;
 	export let className = 'flex';
 	export let theme = '';
 	export let allowHTML = true;
-	export let tippyOptions = {};
+	export let tippyOptions: Record<string, any> = {};
 
-	let tooltipElement;
-	let tooltipInstance;
+	let tooltipElement: HTMLElement | null = null;
+	let tooltipInstance: any = null;
 
 	$: if (tooltipElement && content) {
 		if (tooltipInstance) {
 			tooltipInstance.setContent(DOMPurify.sanitize(content));
 		} else {
-			tooltipInstance = tippy(tooltipElement, {
+			tooltipInstance = (tippy as any)(tooltipElement, {
 				content: DOMPurify.sanitize(content),
-				placement: placement,
-				allowHTML: allowHTML,
-				touch: touch,
+				placement,
+				allowHTML,
+				touch,
 				...(theme !== '' ? { theme } : { theme: 'dark' }),
 				arrow: false,
 				offset: [0, 4],

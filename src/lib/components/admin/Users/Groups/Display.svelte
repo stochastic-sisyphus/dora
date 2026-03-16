@@ -5,9 +5,8 @@
 
 	const i18n = getContext('i18n');
 
-	export let name = '';
-	export let color = '';
-	export let description = '';
+export let name = '';
+export let description = '';
 </script>
 
 <div class="flex gap-2">

@@ -12,13 +12,20 @@
 
 {#if show}
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div
-		class="absolute z-20 top-0 right-0 left-0 bottom-0 bg-white/20 dark:bg-black/5 w-full min-h-full h-full flex justify-center overflow-hidden overscroll-contain"
-		on:mousedown={() => {
-			show = false;
-		}}
-		transition:fade={{ duration: duration }}
-	/>
+		<div
+			class="absolute z-20 top-0 right-0 left-0 bottom-0 bg-white/20 dark:bg-black/5 w-full min-h-full h-full flex justify-center overflow-hidden overscroll-contain"
+			role="button"
+			tabindex="0"
+			on:mousedown={() => {
+				show = false;
+			}}
+			on:keydown={(event) => {
+				if (event.key === 'Enter' || event.key === ' ') {
+					show = false;
+				}
+			}}
+			transition:fade={{ duration: duration }}
+		></div>
 
 	<div
 		class="absolute z-30 shadow-xl {side === 'right' ? 'right-0' : 'left-0'} top-0 bottom-0"

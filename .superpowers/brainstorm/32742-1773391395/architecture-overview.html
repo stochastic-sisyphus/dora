@@ -1,0 +1,132 @@
+<h2>Dora Sidecar Architecture</h2>
+<p class="subtitle">Three invariants, one pipeline, working with what exists</p>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">The Loop</div>
+    <div class="mockup-body" style="padding: 32px; font-family: 'Source Sans 3', system-ui, sans-serif;">
+      <div style="display: flex; gap: 24px; align-items: stretch; min-height: 320px;">
+
+        <div style="flex: 1; background: #2A1B16; border: 2px solid #778C89; border-radius: 12px; padding: 20px; display: flex; flex-direction: column;">
+          <div style="color: #778C89; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; font-weight: 600;">Main Window — Open WebUI</div>
+          <div style="color: #DCCCBD; font-size: 15px; font-weight: 600; margin-bottom: 8px;">The Writable Layer</div>
+          <div style="color: #CABAB0; font-size: 13px; line-height: 1.6; margin-bottom: 16px;">Conversation IS control. You write, the pipeline enforces. No buttons, no modes — writing steers.</div>
+          <div style="background: #40312F; border: 1px solid #51504B; border-radius: 8px; padding: 12px; margin-top: auto;">
+            <div style="color: #A68A7B; font-size: 11px; margin-bottom: 6px;">you:</div>
+            <div style="color: #CABAB0; font-size: 13px; font-style: italic;">"this source contradicts the WHO data — drop it and refocus on peer-reviewed only"</div>
+          </div>
+        </div>
+
+        <div style="flex: 0.6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
+          <div style="width: 3px; height: 40px; background: #778C89;"></div>
+          <div style="background: #40312F; border: 2px solid #A0A598; border-radius: 12px; padding: 16px; text-align: center; width: 100%;">
+            <div style="color: #A0A598; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 600;">Python Sidecar</div>
+            <div style="color: #DCCCBD; font-size: 13px; font-weight: 600; margin-bottom: 6px;">stdin/stdout IPC</div>
+            <div style="color: #CABAB0; font-size: 12px; line-height: 1.5;">
+              Intent classification<br>
+              Lens dispatch<br>
+              Epistemic state<br>
+              Source grading
+            </div>
+          </div>
+          <div style="width: 3px; height: 40px; background: #778C89;"></div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
+            <span style="background: #2A1B16; border: 1px solid #51504B; border-radius: 16px; padding: 3px 10px; color: #A68A7B; font-size: 11px;">SearXNG</span>
+            <span style="background: #2A1B16; border: 1px solid #51504B; border-radius: 16px; padding: 3px 10px; color: #A68A7B; font-size: 11px;">Agent</span>
+            <span style="background: #2A1B16; border: 1px solid #51504B; border-radius: 16px; padding: 3px 10px; color: #A68A7B; font-size: 11px;">Fabric</span>
+            <span style="background: #2A1B16; border: 1px solid #51504B; border-radius: 16px; padding: 3px 10px; color: #A68A7B; font-size: 11px;">API</span>
+            <span style="background: #2A1B16; border: 1px solid #51504B; border-radius: 16px; padding: 3px 10px; color: #A68A7B; font-size: 11px;">...</span>
+          </div>
+        </div>
+
+        <div style="flex: 1; background: #2A1B16; border: 2px solid #778C89; border-radius: 12px; padding: 20px; display: flex; flex-direction: column;">
+          <div style="color: #778C89; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; font-weight: 600;">Navigator Window — Current Truth</div>
+          <div style="color: #DCCCBD; font-size: 15px; font-weight: 600; margin-bottom: 8px;">One Render Surface</div>
+          <div style="color: #CABAB0; font-size: 13px; line-height: 1.6; margin-bottom: 16px;">State, status, graded sources, notes. All lenses render into the same surface. Typed artifacts, not text.</div>
+          <div style="background: #40312F; border: 1px solid #51504B; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: #A0A598; font-size: 11px; font-weight: 600;">CURRENT STATE</span>
+              <span style="background: #778C89; color: #2A1B16; font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 600;">3 sources graded</span>
+            </div>
+          </div>
+          <div style="background: #40312F; border: 1px solid #51504B; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #CABAB0; font-size: 12px;">WHO Global Report 2024</span>
+              <span style="background: #778C89; color: #2A1B16; font-size: 10px; padding: 1px 6px; border-radius: 4px;">HIGH</span>
+            </div>
+          </div>
+          <div style="background: #40312F; border: 1px solid #51504B; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #CABAB0; font-size: 12px;">Nature Meta-Analysis</span>
+              <span style="background: #A0A598; color: #2A1B16; font-size: 10px; padding: 1px 6px; border-radius: 4px;">MED</span>
+            </div>
+          </div>
+          <div style="background: #40312F; border: 1px solid #51504B; border-radius: 6px; padding: 8px 12px; opacity: 0.5;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #CABAB0; font-size: 12px; text-decoration: line-through;">Blog post (unsourced)</span>
+              <span style="background: #605E5C; color: #DCCCBD; font-size: 10px; padding: 1px 6px; border-radius: 4px;">REJECTED</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px; color: #778C89; font-size: 13px;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+          <div style="height: 1px; width: 80px; background: #778C89;"></div>
+          <span>writing flows back as pipeline input — closed loop</span>
+          <div style="height: 1px; width: 80px; background: #778C89;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px;">
+  <h3>The Three Invariants</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 12px;">
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px;">Lenses</div>
+      <div style="font-size: 12px; color: var(--muted); line-height: 1.6;">Pluggable, not enumerated. All share an output schema. New sources addable without restructuring the pipeline. The tool surface is open.</div>
+    </div>
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px;">One Render</div>
+      <div style="font-size: 12px; color: var(--muted); line-height: 1.6;">Single unified surface. State, status, graded sources, notes. Everything renders into the same view regardless of which lens produced it.</div>
+    </div>
+    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px;">Writable Layer</div>
+      <div style="font-size: 12px; color: var(--muted); line-height: 1.6;">Writing IS control. Not annotation, not buttons. You write, the pipeline enforces. Curation operations emerge from writing.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px;">
+  <h3>What Exists vs What We Build</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Already Working</h4>
+      <ul>
+        <li>Tauri shell plugin (execute + spawn)</li>
+        <li>Cross-window state (production-grade)</li>
+        <li>Navigator window configured</li>
+        <li>Research route with Terroir palette</li>
+        <li>SearXNG search command</li>
+        <li>OpenRouter extraction command</li>
+        <li>Open WebUI pipes system</li>
+        <li>substrate_tools Python package</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Need to Build</h4>
+      <ul>
+        <li>Python sidecar process (spawned by Tauri)</li>
+        <li>Shared output schema (lens contract)</li>
+        <li>Lens abstraction (pluggable sources)</li>
+        <li>Epistemic state accumulator</li>
+        <li>OWUI pipe → sidecar bridge</li>
+        <li>Navigator as state renderer (not search UI)</li>
+        <li>Source grading in schema</li>
+        <li>Feedback loop (write → enforce)</li>
+      </ul>
+    </div>
+  </div>
+</div>

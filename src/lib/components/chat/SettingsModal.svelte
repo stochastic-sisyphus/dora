@@ -18,11 +18,11 @@
 	import SearchInput from '../layout/Sidebar/SearchInput.svelte';
 	import Search from '../icons/Search.svelte';
 	import { IS_TAURI_DESKTOP } from '$lib/constants';
-	import type { i18n } from 'i18next';
+	import type { i18n as I18n } from 'i18next';
 	import type { Writable } from 'svelte/store';
 	import DesktopApp from './Settings/DesktopApp.svelte';
 
-	const i18n: Writable<i18n> = getContext('i18n');
+	const i18n: Writable<I18n> = getContext('i18n');
 
 	export let show = false;
 
@@ -375,7 +375,7 @@
 	<div class="text-gray-700 dark:text-gray-100">
 		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
 			<div class=" text-lg font-medium self-center">{$i18n.t('Settings')}</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;
@@ -655,7 +655,6 @@
 			>
 				{#if selectedTab === 'general'}
 					<General
-						{getModels}
 						{saveSettings}
 						on:save={() => {
 							toast.success($i18n.t('Settings saved successfully!'));
@@ -689,7 +688,7 @@
 						}}
 					/>
 				{:else if selectedTab === 'chats'}
-					<Chats {saveSettings} />
+					<Chats />
 				{:else if selectedTab === 'account'}
 					<Account
 						saveHandler={() => {
@@ -719,10 +718,6 @@
 	.tabs {
 		-ms-overflow-style: none; /* IE and Edge */
 		scrollbar-width: none; /* Firefox */
-	}
-
-	input[type='number'] {
-		-moz-appearance: textfield; /* Firefox */
 	}
 
 	.max-h-forms-custom {

@@ -26,17 +26,17 @@
 	export let autoScroll = false;
 
 	export let atSelectedModel: Model | undefined;
-	export let selectedModels: [''];
+	export let selectedModels: string[] = [''];
 
-	export let history;
+	export let history: any;
 
 	export let prompt = '';
-	export let files = [];
+	export let files: any[] = [];
 
-	export let selectedToolIds = [];
+	export let selectedToolIds: string[] = [];
 	export let webSearchEnabled = false;
 
-	let models = [];
+	let models: any[] = [];
 
 	const selectSuggestionPrompt = async (p) => {
 		let text = p;

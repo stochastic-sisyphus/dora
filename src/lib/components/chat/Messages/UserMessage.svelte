@@ -42,6 +42,7 @@
 			message = JSON.parse(JSON.stringify(history.messages[messageId]));
 		}
 	}
+	$: chatDirection = (($settings?.chatDirection ?? 'LTR').toLowerCase() as 'ltr' | 'rtl' | 'auto');
 
 	const copyToClipboard = async (text) => {
 		const res = await _copyToClipboard(text);
@@ -83,7 +84,7 @@
 	});
 </script>
 
-<div class=" flex w-full user-message" dir={$settings.chatDirection} id="message-{message.id}">
+<div class=" flex w-full user-message" dir={chatDirection} id="message-{message.id}">
 	{#if !($settings?.chatBubble ?? true)}
 		<div class={`flex-shrink-0 ${($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}`}>
 			<ProfileImage
@@ -164,8 +165,7 @@
 								if (isCmdOrCtrlPressed && isEnterPressed) {
 									document.getElementById('confirm-edit-message-button')?.click();
 								}
-							}}
-						/>
+							}}></textarea>
 					</div>
 
 					<div class=" mt-2 mb-1 flex justify-between text-sm font-medium">
@@ -234,6 +234,7 @@
 								<div class="flex self-center" dir="ltr">
 									<button
 										class="self-center p-1 hover:bg-black/5 dark:hover:bg-white/5 dark:hover:text-white hover:text-black rounded-md transition"
+										aria-label={$i18n.t('Previous message')}
 										on:click={() => {
 											showPreviousMessage(message);
 										}}
@@ -260,6 +261,7 @@
 
 									<button
 										class="self-center p-1 hover:bg-black/5 dark:hover:bg-white/5 dark:hover:text-white hover:text-black rounded-md transition"
+										aria-label={$i18n.t('Next message')}
 										on:click={() => {
 											showNextMessage(message);
 										}}
@@ -286,6 +288,7 @@
 							<Tooltip content={$i18n.t('Edit')} placement="bottom">
 								<button
 									class="invisible group-hover:visible p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition edit-user-message-button"
+									aria-label={$i18n.t('Edit')}
 									on:click={() => {
 										editMessageHandler();
 									}}
@@ -311,6 +314,7 @@
 						<Tooltip content={$i18n.t('Copy')} placement="bottom">
 							<button
 								class="invisible group-hover:visible p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition"
+								aria-label={$i18n.t('Copy')}
 								on:click={() => {
 									copyToClipboard(message.content);
 								}}
@@ -336,6 +340,7 @@
 							<Tooltip content={$i18n.t('Delete')} placement="bottom">
 								<button
 									class="invisible group-hover:visible p-1 rounded dark:hover:text-white hover:text-black transition"
+									aria-label={$i18n.t('Delete')}
 									on:click={() => {
 										deleteMessageHandler();
 									}}
@@ -363,6 +368,7 @@
 								<div class="flex self-center" dir="ltr">
 									<button
 										class="self-center p-1 hover:bg-black/5 dark:hover:bg-white/5 dark:hover:text-white hover:text-black rounded-md transition"
+										aria-label={$i18n.t('Previous message')}
 										on:click={() => {
 											showPreviousMessage(message);
 										}}
@@ -389,6 +395,7 @@
 
 									<button
 										class="self-center p-1 hover:bg-black/5 dark:hover:bg-white/5 dark:hover:text-white hover:text-black rounded-md transition"
+										aria-label={$i18n.t('Next message')}
 										on:click={() => {
 											showNextMessage(message);
 										}}

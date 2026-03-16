@@ -1,8 +1,20 @@
 {
 	"identifier": "desktop-capability",
 	"platforms": ["macOS", "windows", "linux"],
-	"windows": ["main", "chatbar", "navigator", "navigator-chat", "navigator-research"],
+	"windows": ["main", "chatbar", "navigator"],
 	"permissions": [
+		{
+			"identifier": "shell:allow-spawn",
+			"allow": [{ "name": "binaries/dora-sidecar", "sidecar": true, "args": true }]
+		},
+		{
+			"identifier": "shell:allow-stdin-write",
+			"allow": [{ "name": "binaries/dora-sidecar", "sidecar": true, "args": true }]
+		},
+		{
+			"identifier": "shell:allow-kill",
+			"allow": [{ "name": "binaries/dora-sidecar", "sidecar": true, "args": true }]
+		},
 		"global-shortcut:default",
 		"core:window:allow-start-dragging",
 		"core:window:allow-set-size",

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext, onMount } from 'svelte';
+		import { getContext, onMount } from 'svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
 
 	import {
@@ -20,30 +19,30 @@
 	import { goto } from '$app/navigation';
 	import Search from '../icons/Search.svelte';
 	import { toast } from 'svelte-sonner';
-	import { getOllamaVersion, pullModel } from '$lib/apis/ollama';
+	import { deleteModel, getOllamaVersion, pullModel } from '$lib/apis/ollama';
+	import { getModels } from '$lib/apis';
 	import { sanitizeResponseContent, splitStream } from '$lib/utils';
 	import Fuse from 'fuse.js';
 	import { marked } from 'marked';
 	import Check from '../icons/Check.svelte';
 
-	export let onClose: Function;
-	export let id = '';
-	export let value = '';
-	export let selectedModels = [''];
+export let onClose: Function;
+export let value = '';
+export let selectedModels: string[] = [''];
 
 	const i18n = getContext('i18n');
 	let show = false;
 	let showTemporaryChatControl =
 		$user.role === 'user' ? ($user?.permissions?.chat?.temporary ?? true) : true;
 
-	let items = [];
+	let items: any[] = [];
 	$: items = $models.map((model) => ({
 		value: model.id,
 		label: model.name,
 		model: model
 	}));
 
-	let selectedModel = '';
+	let selectedModel: any = '';
 	$: selectedModel = items.find((item) => item.value === value) ?? '';
 	$: selectedModels = [selectedModel.value];
 
@@ -93,7 +92,7 @@
 			return;
 		}
 
-		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, '0').catch(
+		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, 0).catch(
 			(error) => {
 				toast.error(error);
 				return null;
@@ -236,9 +235,7 @@
 			sideOffset={15}
 			alignOffset={-8}
 			side="top"
-			align="start"
-			transition={flyAndScale}
-		>
+			align="start"		>
 			<div class="flex items-center gap-2.5 px-3 mt-3.5 mb-3">
 				<Search className="size-4" strokeWidth="2.5" />
 
@@ -495,7 +492,7 @@
 
 						<div class="mr-2 ml-1 translate-y-0.5">
 							<Tooltip content={$i18n.t('Cancel')}>
-								<button
+								<button aria-label={$i18n.t('Cancel')}
 									class="text-gray-800 dark:text-gray-100"
 									on:click={() => {
 										cancelModelPullHandler(model);
@@ -527,10 +524,10 @@
 
 			{#if showTemporaryChatControl}
 				<hr class="border-gray-50 dark:border-gray-800" />
-				<div class="h-2" />
+				<div class="h-2"></div>
 				<DropdownMenu.Item
 					class="flex gap-2 justify-between items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-xl"
-					on:click={async () => {
+					onSelect={async () => {
 						$temporaryChatEnabled = !$temporaryChatEnabled;
 						await goto('/chatbar');
 						const newChatButton = document.getElementById('new-chat-button');

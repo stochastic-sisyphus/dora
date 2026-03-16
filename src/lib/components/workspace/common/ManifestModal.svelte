@@ -9,7 +9,7 @@
 	const dispatch = createEventDispatcher();
 
 	export let show = false;
-	export let manifest = {};
+	export let manifest: any = {};
 </script>
 
 <Modal size="sm" bind:show>
@@ -18,6 +18,7 @@
 			<div class=" text-lg font-medium self-center">{$i18n.t('Show your support!')}</div>
 			<button
 				class="self-center"
+				aria-label={$i18n.t('Close')}
 				on:click={() => {
 					show = false;
 				}}
@@ -80,25 +81,3 @@
 		</div>
 	</div>
 </Modal>
-
-<style>
-	input::-webkit-outer-spin-button,
-	input::-webkit-inner-spin-button {
-		/* display: none; <- Crashes Chrome on hover */
-		-webkit-appearance: none;
-		margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
-	}
-
-	.tabs::-webkit-scrollbar {
-		display: none; /* for Chrome, Safari and Opera */
-	}
-
-	.tabs {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
-
-	input[type='number'] {
-		-moz-appearance: textfield; /* Firefox */
-	}
-</style>

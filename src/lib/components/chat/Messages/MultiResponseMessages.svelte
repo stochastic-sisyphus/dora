@@ -28,7 +28,6 @@
 	export let updateChat: Function;
 	export let editMessage: Function;
 	export let saveMessage: Function;
-	export let rateMessage: Function;
 	export let actionMessage: Function;
 
 	export let submitMessage: Function;
@@ -39,6 +38,24 @@
 	export let triggerScroll: Function;
 
 	const dispatch = createEventDispatcher();
+
+	const selectMessage = async (nextMessageId) => {
+		if (messageId == nextMessageId) {
+			return;
+		}
+
+		let currentMessageId = nextMessageId;
+		let messageChildrenIds = history.messages[currentMessageId].childrenIds;
+		while (messageChildrenIds.length !== 0) {
+			currentMessageId = messageChildrenIds.at(-1);
+			messageChildrenIds = history.messages[currentMessageId].childrenIds;
+		}
+		history.currentId = currentMessageId;
+
+		await tick();
+		await updateChat();
+		triggerScroll();
+	};
 
 	let currentMessageId;
 	let parentMessage;
@@ -180,8 +197,6 @@
 		>
 			{#each Object.keys(groupedMessageIds) as modelIdx}
 				{#if groupedMessageIdsIdx[modelIdx] !== undefined && groupedMessageIds[modelIdx].messageIds.length > 0}
-					<!-- svelte-ignore a11y-no-static-element-interactions -->
-					<!-- svelte-ignore a11y-click-events-have-key-events -->
 					{@const _messageId =
 						groupedMessageIds[modelIdx].messageIds[groupedMessageIdsIdx[modelIdx]]}
 
@@ -195,19 +210,15 @@
 									$mobile ? 'min-w-full' : 'min-w-80'
 								}`} transition-all p-5 rounded-2xl"
 						data-tauri-drag-region
-						on:click={async () => {
-							if (messageId != _messageId) {
-								let currentMessageId = _messageId;
-								let messageChildrenIds = history.messages[currentMessageId].childrenIds;
-								while (messageChildrenIds.length !== 0) {
-									currentMessageId = messageChildrenIds.at(-1);
-									messageChildrenIds = history.messages[currentMessageId].childrenIds;
-								}
-								history.currentId = currentMessageId;
-
-								await tick();
-								await updateChat();
-								triggerScroll();
+						role="button"
+						tabindex="0"
+						on:click={() => {
+							selectMessage(_messageId);
+						}}
+						on:keydown={(event) => {
+							if (event.key === 'Enter' || event.key === ' ') {
+								event.preventDefault();
+								selectMessage(_messageId);
 							}
 						}}
 					>
@@ -224,7 +235,6 @@
 									{updateChat}
 									{editMessage}
 									{saveMessage}
-									{rateMessage}
 									{actionMessage}
 									{submitMessage}
 									{continueResponse}
@@ -247,7 +257,7 @@
 			{#if !Object.keys(groupedMessageIds).find((modelIdx) => {
 				const { messageIds } = groupedMessageIds[modelIdx];
 				const _messageId = messageIds[groupedMessageIdsIdx[modelIdx]];
-				return !history.messages[_messageId]?.done ?? false;
+				return !(history.messages[_messageId]?.done ?? false);
 			})}
 				<div class="flex justify-end">
 					<div class="w-full">

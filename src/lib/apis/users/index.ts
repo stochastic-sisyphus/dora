@@ -159,12 +159,13 @@ export const getUserSettings = async (token: string) => {
 		})
 		.catch((err) => {
 			console.log(err);
-			error = err.detail;
+			error = err?.detail ?? err;
 			return null;
 		});
 
 	if (error) {
-		throw error;
+		console.warn('Unable to load user settings; using local settings instead.', error);
+		return null;
 	}
 
 	return res;

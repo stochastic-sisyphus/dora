@@ -51,7 +51,7 @@
 			<div class=" text-lg font-medium self-center capitalize">
 				{$i18n.t('Citation')}
 			</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;

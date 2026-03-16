@@ -14,7 +14,8 @@
 		pinnedChats,
 		scrollPaginationEnabled,
 		currentChatPage,
-		temporaryChatEnabled
+		temporaryChatEnabled,
+		config
 	} from '$lib/stores';
 	import { onMount, getContext, onDestroy } from 'svelte';
 
@@ -33,6 +34,7 @@
 	import { createNewFolder, getFolders, updateFolderParentIdById } from '$lib/apis/folders';
 	import { IS_TAURI_DESKTOP } from '$lib/constants';
 	import { WEBUI_BASE_URL } from '$lib/stores';
+	import openNavigator from '$lib/app/actions/open-navigator';
 	import { resolveResourceUrl } from '$lib/utils';
 
 	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
@@ -50,10 +52,11 @@
 
 	let navElement;
 	let search = '';
+	const LOCAL_LOGO_PATH = '/favicon.png';
 
 	let shiftKey = false;
 
-	let selectedChatId = null;
+	let selectedChatId: string | null = null;
 	let showDropdown = false;
 	let showPinnedChat = true;
 
@@ -61,7 +64,7 @@
 	let chatListLoading = false;
 	let allChatsLoaded = false;
 
-	let folders = {};
+	let folders: Record<string, any> = {};
 
 	const initFolders = async () => {
 		const folderList = await getFolders(localStorage.token).catch((error) => {
@@ -140,6 +143,15 @@
 	};
 
 	const initChatList = async () => {
+		if ($config?.compatibility_mode) {
+			tags.set([]);
+			pinnedChats.set([]);
+			chats.set([]);
+			scrollPaginationEnabled.set(false);
+			folders = {};
+			return;
+		}
+
 		// Reset pagination variables
 		tags.set(await getAllTags(localStorage.token));
 		pinnedChats.set(await getPinnedChatList(localStorage.token));
@@ -159,11 +171,15 @@
 	};
 
 	const loadMoreChats = async () => {
+		if ($config?.compatibility_mode) {
+			return;
+		}
+
 		chatListLoading = true;
 
 		currentChatPage.set($currentChatPage + 1);
 
-		let newChatList = [];
+		let newChatList: any[] = [];
 
 		if (search) {
 			newChatList = await getChatListBySearchText(localStorage.token, search, $currentChatPage);
@@ -182,6 +198,11 @@
 
 	const searchDebounceHandler = async () => {
 		console.log('search', search);
+
+		if ($config?.compatibility_mode) {
+			return;
+		}
+
 		chats.set(null);
 
 		if (searchDebounceTimeout) {
@@ -222,7 +243,7 @@
 		for (const file of files) {
 			const reader = new FileReader();
 			reader.onload = async (e) => {
-				const content = e.target.result;
+					const content = String(e.target?.result ?? '');
 
 				try {
 					const chatItems = JSON.parse(content);
@@ -390,10 +411,16 @@
 {#if $showSidebar}
 	<div
 		class=" fixed md:hidden z-40 top-0 right-0 left-0 bottom-0 bg-black/60 w-full min-h-screen h-screen flex justify-center overflow-hidden overscroll-contain"
+		role="button"
+		tabindex="0"
 		on:mousedown={() => {
 			showSidebar.set(!$showSidebar);
 		}}
-	/>
+		on:keydown={(event) => {
+			if (event.key === 'Enter' || event.key === ' ') {
+				showSidebar.set(!$showSidebar);
+			}
+		}}></div>
 {/if}
 
 <div
@@ -433,7 +460,7 @@
 				<div class="self-center mx-1.5">
 					<img
 						crossorigin="anonymous"
-						src="{$WEBUI_BASE_URL}/static/favicon.png"
+						src={$config?.compatibility_mode ? LOCAL_LOGO_PATH : `${$WEBUI_BASE_URL}/static/favicon.png`}
 						class=" size-5 -translate-x-1.5 rounded-full"
 						alt="logo"
 					/>
@@ -443,7 +470,7 @@
 				</div>
 			</a>
 
-			<button
+			<button aria-label="Action"
 				class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
 				on:click={() => {
 					showSidebar.set(!$showSidebar);
@@ -507,41 +534,110 @@
 			</div>
 		{/if}
 
-		<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
-			{#if $temporaryChatEnabled}
-				<div class="absolute z-40 w-full h-full flex justify-center"></div>
-			{/if}
-
-			<SearchInput
-				bind:value={search}
-				on:input={searchDebounceHandler}
-				placeholder={$i18n.t('Search')}
-			/>
-
-			<div class="absolute z-40 right-3.5 top-1">
-				<Tooltip content={$i18n.t('New folder')}>
-					<button
-						class="p-1 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-950 dark:hover:bg-gray-900 transition"
-						on:click={() => {
-							createFolder();
-						}}
-					>
-						<Plus />
-					</button>
-				</Tooltip>
+		{#if IS_TAURI_DESKTOP}
+			<div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">
+				<button
+					class="flex-grow flex space-x-3 rounded-lg px-2 py-[7px] hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+					on:click={openNavigator}
+				>
+					<div class="self-center">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2"
+							stroke="currentColor"
+							class="size-[1.1rem]"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+							/>
+						</svg>
+					</div>
+					<div class="flex self-center">
+						<div class="self-center font-medium text-sm font-primary">
+							{$i18n.t('Research')}
+						</div>
+					</div>
+				</button>
 			</div>
-		</div>
+		{/if}
 
-		<div
-			class="relative flex flex-col flex-1 overflow-y-auto {$temporaryChatEnabled
-				? 'opacity-20'
-				: ''}"
-		>
-			{#if $temporaryChatEnabled}
-				<div class="absolute z-40 w-full h-full flex justify-center"></div>
-			{/if}
+		{#if $config?.compatibility_mode}
+			<div class="px-3 py-2">
+				<div class="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
+					<div class="font-medium text-gray-900 dark:text-white">Ephemeral Mode</div>
+					<div class="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-400">
+						Dora is running without Open WebUI chat history or a core backend. Start a fresh chat here, or open Navigator for search, browsing, extraction, and note shaping through the bundled sidecar.
+					</div>
+					<div class="mt-3 flex flex-col gap-2">
+						<a
+							class="rounded-xl bg-gray-100 px-3 py-2 text-center font-medium text-gray-900 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+							href="/"
+							on:click={async () => {
+								selectedChatId = null;
+								await goto('/');
+								if ($mobile) {
+									showSidebar.set(false);
+								}
+							}}
+						>
+							New Chat
+						</a>
+						{#if IS_TAURI_DESKTOP}
+							<button
+								class="rounded-xl border border-gray-200 px-3 py-2 text-left font-medium text-gray-900 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800"
+								on:click={async () => {
+									await openNavigator();
+									if ($mobile) {
+										showSidebar.set(false);
+									}
+								}}
+							>
+								Open Navigator
+							</button>
+						{/if}
+					</div>
+				</div>
+			</div>
+		{:else}
+			<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
+				{#if $temporaryChatEnabled}
+					<div class="absolute z-40 w-full h-full flex justify-center"></div>
+				{/if}
 
-			{#if !search && $pinnedChats.length > 0}
+				<SearchInput
+					bind:value={search}
+					on:input={searchDebounceHandler}
+					placeholder={$i18n.t('Search')}
+				/>
+
+				<div class="absolute z-40 right-3.5 top-1">
+					<Tooltip content={$i18n.t('New folder')}>
+						<button
+							class="p-1 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-950 dark:hover:bg-gray-900 transition"
+							on:click={() => {
+								createFolder();
+							}}
+						>
+							<Plus />
+						</button>
+					</Tooltip>
+				</div>
+			</div>
+
+			<div
+				class="relative flex flex-col flex-1 overflow-y-auto {$temporaryChatEnabled
+					? 'opacity-20'
+					: ''}"
+			>
+				{#if $temporaryChatEnabled}
+					<div class="absolute z-40 w-full h-full flex justify-center"></div>
+				{/if}
+
+				{#if !search && $pinnedChats.length > 0}
 				<div class="flex flex-col space-y-1 rounded-xl">
 					<Folder
 						className="px-2"
@@ -617,8 +713,8 @@
 				</div>
 			{/if}
 
-			<div class=" flex-1 flex flex-col overflow-y-auto scrollbar-hidden">
-				{#if !search && folders}
+				<div class=" flex-1 flex flex-col overflow-y-auto scrollbar-hidden">
+					{#if !search && folders}
 					<Folders
 						{folders}
 						on:import={(e) => {
@@ -634,7 +730,7 @@
 					/>
 				{/if}
 
-				<Folder
+					<Folder
 					collapsible={!search}
 					className="px-2 mt-0.5"
 					name={$i18n.t('All chats')}
@@ -664,7 +760,7 @@
 								}
 
 								if (chat.pinned) {
-									const res = await toggleChatPinnedStatusById(localStorage.token, chat, id);
+									const res = await toggleChatPinnedStatusById(localStorage.token, chat.id);
 								}
 
 								initChatList();
@@ -686,9 +782,9 @@
 							}
 						}
 					}}
-				>
-					<div class="pt-1.5">
-						{#if $chats}
+					>
+						<div class="pt-1.5">
+							{#if $chats}
 							{#each $chats as chat, idx}
 								{#if idx === 0 || (idx > 0 && chat.time_range !== $chats[idx - 1].time_range)}
 									<div
@@ -741,7 +837,7 @@
 								/>
 							{/each}
 
-							{#if $scrollPaginationEnabled && !allChatsLoaded}
+								{#if $scrollPaginationEnabled && !allChatsLoaded}
 								<Loader
 									on:visible={(e) => {
 										if (!chatListLoading) {
@@ -756,23 +852,25 @@
 										<div class=" ">Loading...</div>
 									</div>
 								</Loader>
-							{/if}
-						{:else}
+								{/if}
+							{:else}
 							<div class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2">
 								<Spinner className=" size-4" />
 								<div class=" ">Loading...</div>
 							</div>
-						{/if}
-					</div>
-				</Folder>
+							{/if}
+						</div>
+					</Folder>
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<div class="px-2">
 			<div class="flex flex-col font-primary">
 				{#if $user !== undefined}
 					<UserMenu
 						role={$user.role}
+						compatibilityMode={Boolean($config?.compatibility_mode)}
 						on:show={(e) => {
 							if (e.detail === 'archived-chat') {
 								showArchivedChats.set(true);

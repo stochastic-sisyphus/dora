@@ -45,11 +45,12 @@
 					const reader = new FileReader();
 
 					reader.onload = async (e) => {
-						const res = await importConfig(localStorage.token, JSON.parse(e.target.result)).catch(
-							(error) => {
-								toast.error(error);
-							}
-						);
+						const res = await importConfig(
+							localStorage.token,
+							JSON.parse(String(e.target?.result ?? ''))
+						).catch((error) => {
+							toast.error(error);
+						});
 
 						if (res) {
 							toast.success('Config imported successfully');

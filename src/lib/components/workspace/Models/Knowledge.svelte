@@ -3,10 +3,9 @@
 	import Selector from './Knowledge/Selector.svelte';
 	import FileItem from '$lib/components/common/FileItem.svelte';
 
-	export let selectedKnowledge = [];
-	export let collections = [];
+export let selectedKnowledge = [];
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 </script>
 
 <div>
@@ -22,14 +21,15 @@
 		{#if selectedKnowledge?.length > 0}
 			<div class=" flex flex-wrap items-center gap-2 mt-2">
 				{#each selectedKnowledge as file, fileIdx}
-					<FileItem
-						{file}
-						name={file.name}
-						type={file?.legacy
-							? `Legacy${file.type ? ` ${file.type}` : ''}`
-							: (file?.type ?? 'Collection')}
-						dismissible
-						on:dismiss={(e) => {
+						<FileItem
+							item={file}
+							name={file.name}
+							type={file?.legacy
+								? `Legacy${file.type ? ` ${file.type}` : ''}`
+								: (file?.type ?? 'Collection')}
+							size={Number(file?.size ?? file?.meta?.size ?? 0)}
+							dismissible
+							on:dismiss={(e) => {
 							selectedKnowledge = selectedKnowledge.filter((_, idx) => idx !== fileIdx);
 						}}
 					/>

@@ -125,7 +125,7 @@
 					{$i18n.t('Add Arena Model')}
 				{/if}
 			</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;

@@ -245,6 +245,7 @@
 					<button
 						class="p-1 px-3 text-xs flex rounded transition"
 						type="button"
+						aria-label={$i18n.t('Add banner')}
 						on:click={() => {
 							if (banners.length === 0 || banners.at(-1).content !== '') {
 								banners = [
@@ -309,6 +310,7 @@
 							<button
 								class="px-2"
 								type="button"
+								aria-label={$i18n.t('Remove banner')}
 								on:click={() => {
 									banners.splice(bannerIdx, 1);
 									banners = banners;
@@ -340,6 +342,7 @@
 						<button
 							class="p-1 px-3 text-xs flex rounded transition"
 							type="button"
+							aria-label={$i18n.t('Add prompt suggestion')}
 							on:click={() => {
 								if (promptSuggestions.length === 0 || promptSuggestions.at(-1).content !== '') {
 									promptSuggestions = [...promptSuggestions, { content: '', title: ['', ''] }];
@@ -382,13 +385,13 @@
 										class="px-3 py-1.5 text-xs w-full bg-transparent outline-none border-r border-gray-100 dark:border-gray-800 resize-none"
 										placeholder={$i18n.t('Prompt (e.g. Tell me a fun fact about the Roman Empire)')}
 										rows="3"
-										bind:value={prompt.content}
-									/>
+										bind:value={prompt.content}></textarea>
 								</div>
 
 								<button
 									class="px-3"
 									type="button"
+									aria-label={$i18n.t('Remove prompt suggestion')}
 									on:click={() => {
 										promptSuggestions.splice(promptIdx, 1);
 										promptSuggestions = promptSuggestions;

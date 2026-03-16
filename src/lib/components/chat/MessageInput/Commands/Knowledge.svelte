@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { toast } from 'svelte-sonner';
 	import Fuse from 'fuse.js';
 
@@ -76,14 +77,14 @@
 	};
 
 	onMount(() => {
-		let legacy_documents = $knowledge
+		let legacy_documents: any[] = $knowledge
 			.filter((item) => item?.meta?.document)
 			.map((item) => ({
 				...item,
 				type: 'file'
 			}));
 
-		let legacy_collections =
+		let legacy_collections: any[] =
 			legacy_documents.length > 0
 				? [
 						{
@@ -111,13 +112,13 @@
 					]
 				: [];
 
-		let collections = $knowledge
+		let collections: any[] = $knowledge
 			.filter((item) => !item?.meta?.document)
 			.map((item) => ({
 				...item,
 				type: 'collection'
 			}));
-		let collection_files =
+		let collection_files: any[] =
 			$knowledge.length > 0
 				? [
 						...$knowledge

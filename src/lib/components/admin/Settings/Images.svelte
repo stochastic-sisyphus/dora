@@ -298,7 +298,7 @@
 									bind:value={config.automatic1111.AUTOMATIC1111_BASE_URL}
 								/>
 							</div>
-							<button
+							<button aria-label="Action"
 								class="px-2.5 bg-gray-50 hover:bg-gray-100 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
 								type="button"
 								on:click={async () => {
@@ -434,7 +434,7 @@
 									bind:value={config.comfyui.COMFYUI_BASE_URL}
 								/>
 							</div>
-							<button
+							<button aria-label="Action"
 								class="px-2.5 bg-gray-50 hover:bg-gray-100 text-gray-800 dark:bg-gray-850 dark:hover:bg-gray-800 dark:text-gray-100 rounded-lg transition"
 								type="button"
 								on:click={async () => {
@@ -473,8 +473,7 @@
 								class="w-full rounded-lg mb-1 py-2 px-4 text-xs bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none disabled:text-gray-600 resize-none"
 								rows="10"
 								bind:value={config.comfyui.COMFYUI_WORKFLOW}
-								required
-							/>
+								required></textarea>
 						{/if}
 
 						<div class="flex w-full">

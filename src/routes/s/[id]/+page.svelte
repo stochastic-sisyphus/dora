@@ -137,7 +137,6 @@
 							chatId={$chatId}
 							readOnly={true}
 							{selectedModels}
-							{processing}
 							bind:history
 							bind:messages
 							bind:autoScroll

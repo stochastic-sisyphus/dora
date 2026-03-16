@@ -145,7 +145,7 @@
 							});
 						} else {
 							codeEditor.dispatch({
-								effects: editorTheme.reconfigure()
+								effects: editorTheme.reconfigure([])
 							});
 						}
 					}
@@ -180,4 +180,4 @@
 	});
 </script>
 
-<div id="code-textarea-{id}" class="h-full w-full" />
+<div id="code-textarea-{id}" class="h-full w-full"></div>

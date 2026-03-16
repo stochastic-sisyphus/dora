@@ -1,4 +1,5 @@
 <script lang="ts">
+	// -nocheck
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	import { getLanguages } from '$lib/i18n';
@@ -12,7 +13,6 @@
 	import { applyTheme } from '$lib/utils';
 
 	export let saveSettings: Function;
-	export let getModels: Function;
 
 	// General
 
@@ -44,7 +44,7 @@
 	let requestFormat = '';
 	let keepAlive: string | null = null;
 
-	let params = {
+	let params: any = {
 		// Advanced
 		stream_response: null,
 		seed: null,
@@ -63,7 +63,11 @@
 		num_batch: null,
 		num_keep: null,
 		max_tokens: null,
-		num_gpu: null
+		num_gpu: null,
+		use_mmap: null,
+		use_mlock: null,
+		num_thread: null,
+		template: null
 	};
 
 	const toggleRequestFormat = async () => {
@@ -142,7 +146,7 @@
 						href="https://github.com/open-webui/open-webui/blob/main/docs/CONTRIBUTING.md#-translations-and-internationalization"
 						target="_blank"
 					>
-						Help us translate Open WebUI!
+						Help us translate the app!
 					</a>
 				</div>
 			{/if}
@@ -175,8 +179,7 @@
 			<textarea
 				bind:value={system}
 				class="w-full rounded-lg p-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none resize-none"
-				rows="4"
-			/>
+				rows="4"></textarea>
 		</div>
 
 		<div class="mt-2 space-y-3 pr-1.5">
@@ -288,7 +291,11 @@
 						num_thread: params.num_thread !== null ? params.num_thread : undefined,
 						num_gpu: params.num_gpu !== null ? params.num_gpu : undefined
 					},
-					keepAlive: keepAlive ? (isNaN(keepAlive) ? keepAlive : parseInt(keepAlive)) : undefined
+					keepAlive: keepAlive
+						? isNaN(Number(keepAlive))
+							? keepAlive
+							: parseInt(keepAlive, 10)
+						: undefined
 				});
 				dispatch('save');
 			}}

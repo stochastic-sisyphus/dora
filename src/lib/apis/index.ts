@@ -1,45 +1,187 @@
 import { get } from 'svelte/store';
-import { WEBUI_BASE_URL } from '$lib/stores';
+import { COMPATIBLE_SERVER_URL } from '$lib/stores';
 
-export const getModels = async (token: string = '', base: boolean = false) => {
-	let error = null;
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/models${base ? '/base' : ''}`, {
+const normalizeBaseUrl = (baseUrl: string) => baseUrl.trim().replace(/\/+$/, '');
+
+const getJson = async (url: string, headers: Record<string, string>) => {
+	const response = await fetch(url, {
 		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			error = err;
-			console.error(err);
-			return null;
-		});
+		headers
+	});
 
-	if (error) {
-		throw error;
+	if (!response.ok) {
+		let errorBody: unknown = null;
+		try {
+			errorBody = await response.json();
+		} catch {
+			errorBody = await response.text();
+		}
+		throw errorBody;
 	}
 
-	const models = res?.data ?? [];
-	return models;
+	return response.json();
+};
+
+const deriveServerName = (baseUrl: string, explicitName?: string | null) => {
+	if (explicitName?.trim()) {
+		return explicitName.trim();
+	}
+
+	try {
+		return new URL(baseUrl).hostname || baseUrl;
+	} catch {
+		return baseUrl || 'Compatible Server';
+	}
+};
+
+const normalizeCompatibleModels = (payload: any, discoveredBaseUrl: string) => {
+	const rawModels = Array.isArray(payload)
+		? payload
+		: Array.isArray(payload?.data)
+			? payload.data
+			: [];
+
+	return rawModels
+		.filter((model) => typeof model?.id === 'string' && model.id.trim() !== '')
+		.map((model) => ({
+			id: model.id,
+			name: model.name ?? model.id,
+			owned_by: 'openai' as const,
+			external: true,
+			source: 'compatible',
+			info: {
+				baseUrl: discoveredBaseUrl,
+				meta: {
+					profile_image_url: model?.info?.meta?.profile_image_url,
+					description: model?.description ?? '',
+					capabilities: {
+						usage: true,
+						vision: true,
+						...(model?.info?.meta?.capabilities ?? {})
+					}
+				},
+				...(model?.info ?? {})
+			}
+		}));
+};
+
+export const probeCompatibleServer = async (baseUrl: string, token: string = '') => {
+	const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+	if (!normalizedBaseUrl) {
+		throw new Error('Please enter a server URL.');
+	}
+
+	const headers = {
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
+		...(token && { authorization: `Bearer ${token}` })
+	};
+
+	let config = null;
+	try {
+		config = await getJson(`${normalizedBaseUrl}/api/config`, {
+			'Content-Type': 'application/json'
+		});
+	} catch (error) {
+		console.error(error);
+	}
+
+	let models = [];
+	let discoveredOpenAIBaseUrl = `${normalizedBaseUrl}/v1`;
+
+	try {
+		const res = await getJson(`${normalizedBaseUrl}/api/models`, headers);
+		models = res?.data ?? [];
+	} catch (error) {
+		console.error(error);
+	}
+
+	if (!models.length) {
+		const compatibilityEndpoints = [`${normalizedBaseUrl}/v1/models`, `${normalizedBaseUrl}/models`];
+
+		for (const modelsUrl of compatibilityEndpoints) {
+			try {
+				const res = await getJson(modelsUrl, headers);
+				discoveredOpenAIBaseUrl = modelsUrl.replace(/\/models$/, '');
+				models = normalizeCompatibleModels(res, discoveredOpenAIBaseUrl);
+
+				if (models.length > 0) {
+					break;
+				}
+			} catch (error) {
+				console.error(error);
+			}
+		}
+	}
+
+	if (!config && models.length === 0) {
+		throw new Error(
+			'Could not read backend configuration or models from that server URL.'
+		);
+	}
+
+	return {
+		baseUrl: normalizedBaseUrl,
+		name: deriveServerName(normalizedBaseUrl, config?.name),
+		config,
+		models,
+		modelCount: models.length,
+		compatibilityMode: !config,
+		openAIBaseUrl: discoveredOpenAIBaseUrl
+	};
+};
+
+export const getModels = async (token: string = '', base: boolean = false) => {
+	const baseUrl = get(COMPATIBLE_SERVER_URL);
+	const headers = {
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
+		...(token && { authorization: `Bearer ${token}` })
+	};
+
+	try {
+		const res = await getJson(`${baseUrl}/api/models${base ? '/base' : ''}`, headers);
+		return res?.data ?? [];
+	} catch (error) {
+		console.error(error);
+	}
+
+	if (base) {
+		return [];
+	}
+
+	const compatibilityEndpoints = [`${baseUrl}/v1/models`, `${baseUrl}/models`];
+
+	for (const modelsUrl of compatibilityEndpoints) {
+		try {
+			const res = await getJson(modelsUrl, headers);
+			const discoveredBaseUrl = modelsUrl.replace(/\/models$/, '');
+			const models = normalizeCompatibleModels(res, discoveredBaseUrl);
+
+			if (models.length > 0) {
+				return models;
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	return [];
 };
 
 type ChatCompletedForm = {
 	model: string;
-	messages: string[];
+	messages: any[];
 	chat_id: string;
 	session_id: string;
+	id?: string;
+	[key: string]: any;
 };
 
 export const chatCompleted = async (token: string, body: ChatCompletedForm) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/chat/completed`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/chat/completed`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -71,14 +213,15 @@ export const chatCompleted = async (token: string, body: ChatCompletedForm) => {
 
 type ChatActionForm = {
 	model: string;
-	messages: string[];
+	messages: any[];
 	chat_id: string;
+	[key: string]: any;
 };
 
 export const chatAction = async (token: string, action_id: string, body: ChatActionForm) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/chat/actions/${action_id}`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/chat/actions/${action_id}`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -111,7 +254,7 @@ export const chatAction = async (token: string, action_id: string, body: ChatAct
 export const getTaskConfig = async (token: string = '') => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/config`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/config`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
@@ -139,7 +282,7 @@ export const getTaskConfig = async (token: string = '') => {
 export const updateTaskConfig = async (token: string, config: object) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/config/update`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/config/update`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -177,7 +320,7 @@ export const generateTitle = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/title/completions`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/title/completions`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -217,7 +360,7 @@ export const generateTags = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/tags/completions`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/tags/completions`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -289,7 +432,7 @@ export const generateEmoji = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/emoji/completions`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/emoji/completions`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -338,7 +481,7 @@ export const generateQueries = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/queries/completions`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/queries/completions`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -408,7 +551,7 @@ export const generateAutoCompletion = async (
 	const controller = new AbortController();
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/auto/completions`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/auto/completions`, {
 		signal: controller.signal,
 		method: 'POST',
 		headers: {
@@ -478,7 +621,7 @@ export const generateMoACompletion = async (
 	const controller = new AbortController();
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/task/moa/completions`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/task/moa/completions`, {
 		signal: controller.signal,
 		method: 'POST',
 		headers: {
@@ -508,7 +651,7 @@ export const generateMoACompletion = async (
 export const getPipelinesList = async (token: string = '') => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/pipelines/list`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/pipelines/list`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
@@ -542,7 +685,7 @@ export const uploadPipeline = async (token: string, file: File, urlIdx: string) 
 	formData.append('file', file);
 	formData.append('urlIdx', urlIdx);
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/pipelines/upload`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/pipelines/upload`, {
 		method: 'POST',
 		headers: {
 			...(token && { authorization: `Bearer ${token}` })
@@ -574,7 +717,7 @@ export const uploadPipeline = async (token: string, file: File, urlIdx: string) 
 export const downloadPipeline = async (token: string, url: string, urlIdx: string) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/pipelines/add`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/pipelines/add`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -610,7 +753,7 @@ export const downloadPipeline = async (token: string, url: string, urlIdx: strin
 export const deletePipeline = async (token: string, id: string, urlIdx: string) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/pipelines/delete`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/pipelines/delete`, {
 		method: 'DELETE',
 		headers: {
 			Accept: 'application/json',
@@ -651,7 +794,7 @@ export const getPipelines = async (token: string, urlIdx?: string) => {
 		searchParams.append('urlIdx', urlIdx);
 	}
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/pipelines?${searchParams.toString()}`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/pipelines?${searchParams.toString()}`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
@@ -686,7 +829,7 @@ export const getPipelineValves = async (token: string, pipeline_id: string, urlI
 	}
 
 	const res = await fetch(
-		`${get(WEBUI_BASE_URL)}/api/pipelines/${pipeline_id}/valves?${searchParams.toString()}`,
+		`${get(COMPATIBLE_SERVER_URL)}/api/pipelines/${pipeline_id}/valves?${searchParams.toString()}`,
 		{
 			method: 'GET',
 			headers: {
@@ -722,7 +865,7 @@ export const getPipelineValvesSpec = async (token: string, pipeline_id: string, 
 	}
 
 	const res = await fetch(
-		`${get(WEBUI_BASE_URL)}/api/pipelines/${pipeline_id}/valves/spec?${searchParams.toString()}`,
+		`${get(COMPATIBLE_SERVER_URL)}/api/pipelines/${pipeline_id}/valves/spec?${searchParams.toString()}`,
 		{
 			method: 'GET',
 			headers: {
@@ -763,7 +906,7 @@ export const updatePipelineValves = async (
 	}
 
 	const res = await fetch(
-		`${get(WEBUI_BASE_URL)}/api/pipelines/${pipeline_id}/valves/update?${searchParams.toString()}`,
+		`${get(COMPATIBLE_SERVER_URL)}/api/pipelines/${pipeline_id}/valves/update?${searchParams.toString()}`,
 		{
 			method: 'POST',
 			headers: {
@@ -799,7 +942,7 @@ export const updatePipelineValves = async (
 export const getBackendConfig = async () => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/config`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/config`, {
 		method: 'GET',
 		// credentials: 'include',
 		headers: {
@@ -826,7 +969,7 @@ export const getBackendConfig = async () => {
 export const getChangelog = async () => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/changelog`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/changelog`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json'
@@ -852,7 +995,7 @@ export const getChangelog = async () => {
 export const getVersionUpdates = async () => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/version/updates`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/version/updates`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json'
@@ -878,7 +1021,7 @@ export const getVersionUpdates = async () => {
 export const getModelFilterConfig = async (token: string) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/config/model/filter`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/config/model/filter`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
@@ -909,7 +1052,7 @@ export const updateModelFilterConfig = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/config/model/filter`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/config/model/filter`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -940,7 +1083,7 @@ export const updateModelFilterConfig = async (
 export const getWebhookUrl = async (token: string) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/webhook`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/webhook`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
@@ -967,7 +1110,7 @@ export const getWebhookUrl = async (token: string) => {
 export const updateWebhookUrl = async (token: string, url: string) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/webhook`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/webhook`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -997,7 +1140,7 @@ export const updateWebhookUrl = async (token: string, url: string) => {
 export const getCommunitySharingEnabledStatus = async (token: string) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/community_sharing`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/community_sharing`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
@@ -1024,7 +1167,7 @@ export const getCommunitySharingEnabledStatus = async (token: string) => {
 export const toggleCommunitySharingEnabledStatus = async (token: string) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/community_sharing/toggle`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/community_sharing/toggle`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
@@ -1051,7 +1194,7 @@ export const toggleCommunitySharingEnabledStatus = async (token: string) => {
 export const getModelConfig = async (token: string): Promise<GlobalModelConfig> => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/config/models`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/config/models`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
@@ -1085,18 +1228,28 @@ export interface ModelConfig {
 
 export interface ModelMeta {
 	description?: string;
-	capabilities?: object;
+	capabilities?: Record<string, any>;
 	profile_image_url?: string;
+	suggestion_prompts?: any;
+	tags?: any[];
+	knowledge?: any[];
+	toolIds?: string[];
+	filterIds?: string[];
+	actionIds?: string[];
+	hidden?: boolean;
+	[key: string]: any;
 }
 
-export interface ModelParams {}
+export interface ModelParams {
+	[key: string]: any;
+}
 
 export type GlobalModelConfig = ModelConfig[];
 
 export const updateModelConfig = async (token: string, config: GlobalModelConfig) => {
 	let error = null;
 
-	const res = await fetch(`${get(WEBUI_BASE_URL)}/api/config/models`, {
+	const res = await fetch(`${get(COMPATIBLE_SERVER_URL)}/api/config/models`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',

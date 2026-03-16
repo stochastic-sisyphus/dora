@@ -1165,8 +1165,7 @@
 							class="px-3 py-1.5 text-sm w-full bg-transparent border dark:border-gray-600 outline-none rounded-lg -mb-1"
 							placeholder={$i18n.t('Write your model template content here')}
 							rows="4"
-							bind:value={params.template}
-						/>
+							bind:value={params.template}></textarea>
 					</div>
 				</div>
 			{/if}

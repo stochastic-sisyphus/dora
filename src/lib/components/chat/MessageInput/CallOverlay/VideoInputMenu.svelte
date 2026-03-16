@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext, createEventDispatcher } from 'svelte';
+		import { getContext, createEventDispatcher } from 'svelte';
 
 	const i18n = getContext('i18n');
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<Record<string, any>>();
 
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 
@@ -29,13 +28,11 @@
 			class="w-full max-w-[180px] rounded-lg px-1 py-1.5 border border-gray-300/30 dark:border-gray-700/50 z-[9999] bg-white dark:bg-gray-900 dark:text-white shadow-sm"
 			sideOffset={6}
 			side="top"
-			align="start"
-			transition={flyAndScale}
-		>
+			align="start"		>
 			{#each devices as device}
 				<DropdownMenu.Item
 					class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-					on:click={() => {
+					onSelect={() => {
 						dispatch('change', device.deviceId);
 					}}
 				>

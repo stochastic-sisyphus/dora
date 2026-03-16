@@ -46,6 +46,10 @@
 		id: string;
 		model: string;
 		content: string;
+		parentId?: string | null;
+		selectedModelId?: string;
+		feedbackId?: string;
+		arena?: boolean;
 		files?: { type: string; url: string }[];
 		timestamp: number;
 		role: string;
@@ -66,6 +70,7 @@
 		done: boolean;
 		error?: boolean | { content: string };
 		sources?: string[];
+		citations?: any[];
 		code_executions?: {
 			uuid: string;
 			name: string;
@@ -90,11 +95,12 @@
 			load_duration?: number;
 			usage?: unknown;
 		};
-		annotation?: { type: string; rating: number };
+		annotation?: { type?: string; rating?: number; tags?: string[]; [key: string]: any };
+		[key: string]: any;
 	}
 
 	export let chatId = '';
-	export let history;
+	export let history: any;
 	export let messageId;
 
 	let message: MessageType = JSON.parse(JSON.stringify(history.messages[messageId]));
@@ -104,7 +110,7 @@
 		}
 	}
 
-	export let siblings;
+	export let siblings: any[] = [];
 
 	export let showPreviousMessage: Function;
 	export let showNextMessage: Function;
@@ -112,17 +118,16 @@
 	export let updateChat: Function;
 	export let editMessage: Function;
 	export let saveMessage: Function;
-	export let rateMessage: Function;
 	export let actionMessage: Function;
 
 	export let submitMessage: Function;
 	export let continueResponse: Function;
 	export let regenerateResponse: Function;
 
-	export let isLastMessage = true;
-	export let readOnly = false;
+export let isLastMessage = true;
+export let readOnly = false;
 
-	let model = null;
+	let model: any = null;
 	$: model = $models.find((m) => m.id === message.model);
 
 	let edit = false;
@@ -340,12 +345,13 @@
 	};
 
 	let feedbackLoading = false;
+	$: chatDirection = (($settings?.chatDirection ?? 'LTR').toLowerCase() as 'ltr' | 'rtl' | 'auto');
 
 	const feedbackHandler = async (rating: number | null = null, details: object | null = null) => {
 		feedbackLoading = true;
 		console.log('Feedback', rating, details);
 
-		const updatedMessage = {
+		const updatedMessage: any = {
 			...message,
 			annotation: {
 				...(message?.annotation ?? {}),
@@ -363,7 +369,7 @@
 
 		const messages = createMessagesList(history, message.id);
 
-		let feedbackItem = {
+		let feedbackItem: any = {
 			type: 'rating',
 			data: {
 				...(updatedMessage?.annotation ? updatedMessage.annotation : {}),
@@ -476,7 +482,7 @@
 	<div
 		class=" flex w-full message-{message.id}"
 		id="message-{message.id}"
-		dir={$settings.chatDirection}
+		dir={chatDirection}
 		data-tauri-drag-region
 	>
 		<div
@@ -530,7 +536,7 @@
 								{/if}
 
 								{#if status?.action === 'web_search' && status?.urls}
-									<WebSearchResults {status}>
+									<WebSearchResults status={status as any}>
 										<div class="flex flex-col justify-center -space-y-0.5">
 											<div
 												class="{status?.done === false
@@ -577,8 +583,7 @@
 										if (isCmdOrCtrlPressed && isEnterPressed) {
 											document.getElementById('confirm-edit-message-button')?.click();
 										}
-									}}
-								/>
+									}}></textarea>
 
 								<div class=" mt-2 mb-1 flex justify-between text-sm font-medium">
 									<div>
@@ -630,14 +635,14 @@
 										floatingButtons={message?.done}
 										save={!readOnly}
 										{model}
-										onSourceClick={(e) => {
+										onSourceClick={((e: any) => {
 											console.log(e);
 											const sourceButton = document.getElementById(`source-${e}`);
 
 											if (sourceButton) {
 												sourceButton.click();
 											}
-										}}
+										}) as Function}
 										on:update={(e) => {
 											const { raw, oldContent, newContent } = e.detail;
 
@@ -664,7 +669,11 @@
 								{/if}
 
 								{#if message?.error}
-									<Error content={message?.error?.content ?? message.content} />
+									<Error
+										content={typeof message?.error === 'object'
+											? message.error.content
+											: message.content}
+									/>
 								{/if}
 
 								{#if (message?.sources || message?.citations) && (model?.info?.meta?.capabilities?.citations ?? true)}
@@ -689,6 +698,7 @@
 								<div class="flex self-center min-w-fit" dir="ltr">
 									<button
 										class="self-center p-1 hover:bg-black/5 dark:hover:bg-white/5 dark:hover:text-white hover:text-black rounded-md transition"
+										aria-label={$i18n.t('Previous response')}
 										on:click={() => {
 											showPreviousMessage(message);
 										}}
@@ -717,6 +727,7 @@
 
 									<button
 										class="self-center p-1 hover:bg-black/5 dark:hover:bg-white/5 dark:hover:text-white hover:text-black rounded-md transition"
+										aria-label={$i18n.t('Next response')}
 										on:click={() => {
 											showNextMessage(message);
 										}}
@@ -747,6 +758,7 @@
 												class="{isLastMessage
 													? 'visible'
 													: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition"
+												aria-label={$i18n.t('Edit')}
 												on:click={() => {
 													editMessageHandler();
 												}}
@@ -775,6 +787,7 @@
 										class="{isLastMessage
 											? 'visible'
 											: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition copy-response-button"
+										aria-label={$i18n.t('Copy')}
 										on:click={() => {
 											copyToClipboard(message.content);
 										}}
@@ -802,6 +815,7 @@
 										class="{isLastMessage
 											? 'visible'
 											: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition"
+										aria-label={$i18n.t('Read Aloud')}
 										on:click={() => {
 											if (!loadingSpeech) {
 												toggleSpeakMessage();
@@ -880,6 +894,7 @@
 											class="{isLastMessage
 												? 'visible'
 												: 'invisible group-hover:visible'}  p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition"
+											aria-label={$i18n.t('Generate Image')}
 											on:click={() => {
 												if (!generatingImage) {
 													generateImage(message);
@@ -961,29 +976,28 @@
 																((message.info.eval_duration ?? 0) / 1000000000)) *
 																100
 														) / 100
-													} tokens` ?? 'N/A'
+													} tokens`
 												}<br/>
 					prompt_token/s: ${
 						Math.round(
 							((message.info.prompt_eval_count ?? 0) /
 								((message.info.prompt_eval_duration ?? 0) / 1000000000)) *
 								100
-						) / 100 ?? 'N/A'
+						) / 100
 					} tokens<br/>
 		            total_duration: ${
-									Math.round(((message.info.total_duration ?? 0) / 1000000) * 100) / 100 ?? 'N/A'
+									Math.round(((message.info.total_duration ?? 0) / 1000000) * 100) / 100
 								}ms<br/>
 		            load_duration: ${
-									Math.round(((message.info.load_duration ?? 0) / 1000000) * 100) / 100 ?? 'N/A'
+									Math.round(((message.info.load_duration ?? 0) / 1000000) * 100) / 100
 								}ms<br/>
 		            prompt_eval_count: ${message.info.prompt_eval_count ?? 'N/A'}<br/>
 		            prompt_eval_duration: ${
-									Math.round(((message.info.prompt_eval_duration ?? 0) / 1000000) * 100) / 100 ??
-									'N/A'
+									Math.round(((message.info.prompt_eval_duration ?? 0) / 1000000) * 100) / 100
 								}ms<br/>
 		            eval_count: ${message.info.eval_count ?? 'N/A'}<br/>
 		            eval_duration: ${
-									Math.round(((message.info.eval_duration ?? 0) / 1000000) * 100) / 100 ?? 'N/A'
+									Math.round(((message.info.eval_duration ?? 0) / 1000000) * 100) / 100
 								}ms<br/>
 		            approximate_total: ${approximateToHumanReadable(message.info.total_duration ?? 0)}`}
 										placement="top"
@@ -993,6 +1007,7 @@
 												class=" {isLastMessage
 													? 'visible'
 													: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition whitespace-pre-wrap"
+												aria-label={$i18n.t('Generation Info')}
 												on:click={() => {
 													console.log(message);
 												}}
@@ -1028,6 +1043,7 @@
 												).toString() === '1'
 													? 'bg-gray-100 dark:bg-gray-800'
 													: ''} dark:hover:text-white hover:text-black transition disabled:cursor-progress disabled:hover:bg-transparent"
+												aria-label={$i18n.t('Good Response')}
 												disabled={feedbackLoading}
 												on:click={async () => {
 													await feedbackHandler(1);
@@ -1064,6 +1080,7 @@
 												).toString() === '-1'
 													? 'bg-gray-100 dark:bg-gray-800'
 													: ''} dark:hover:text-white hover:text-black transition disabled:cursor-progress disabled:hover:bg-transparent"
+												aria-label={$i18n.t('Bad Response')}
 												disabled={feedbackLoading}
 												on:click={async () => {
 													await feedbackHandler(-1);
@@ -1100,6 +1117,7 @@
 												class="{isLastMessage
 													? 'visible'
 													: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition regenerate-response-button"
+												aria-label={$i18n.t('Continue Response')}
 												on:click={() => {
 													continueResponse();
 												}}
@@ -1133,6 +1151,7 @@
 											class="{isLastMessage
 												? 'visible'
 												: 'invisible group-hover:visible'} p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition regenerate-response-button"
+											aria-label={$i18n.t('Regenerate')}
 											on:click={() => {
 												showRateComment = false;
 												regenerateResponse(message);

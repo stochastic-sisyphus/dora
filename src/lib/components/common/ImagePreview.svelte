@@ -64,7 +64,7 @@
 	>
 		<div class=" absolute left-0 w-full flex justify-between select-none">
 			<div>
-				<button
+				<button aria-label="Action"
 					class=" p-5"
 					on:click={() => {
 						show = false;
@@ -84,7 +84,7 @@
 			</div>
 
 			<div>
-				<button
+				<button aria-label="Action"
 					class=" p-5"
 					on:click={() => {
 						downloadImage(src, src.substring(src.lastIndexOf('/') + 1), alt);

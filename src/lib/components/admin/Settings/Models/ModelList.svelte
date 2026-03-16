@@ -14,7 +14,7 @@
 	let modelListElement = null;
 
 	const positionChangeHandler = () => {
-		const modelList = Array.from(modelListElement.children).map((child) =>
+		const modelList = Array.from(modelListElement.children).map((child: any) =>
 			child.id.replace('model-item-', '')
 		);
 

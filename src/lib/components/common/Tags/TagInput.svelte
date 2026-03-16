@@ -38,7 +38,7 @@
 			/>
 			<datalist id="tagOptions">
 				{#each $tags as tag}
-					<option value={tag.name} />
+					<option value={tag.name}></option>
 				{/each}
 			</datalist>
 

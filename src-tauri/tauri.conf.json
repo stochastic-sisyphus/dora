@@ -1,12 +1,12 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "Open WebUI",
-	"version": "0.1.0",
-	"identifier": "com.open-webui-desktop.app",
+	"productName": "dora",
+	"version": "0.6.6",
+	"identifier": "com.dora-desktop.app",
 	"build": {
-		"beforeDevCommand": "pnpm run dev",
+		"beforeDevCommand": "python3 sidecar/build.py && corepack pnpm run dev",
 		"devUrl": "http://localhost:1420",
-		"beforeBuildCommand": "pnpm run build",
+		"beforeBuildCommand": "python3 sidecar/build.py && corepack pnpm run build",
 		"frontendDist": "../build"
 	},
 	"app": {
@@ -14,7 +14,7 @@
 		"windows": [
 			{
 				"label": "main",
-				"title": "Open WebUI",
+				"title": "dora",
 				"url": "/",
 				"width": 800,
 				"height": 650,
@@ -42,6 +42,18 @@
 				"minimizable": false,
 				"dragDropEnabled": true,
 				"devtools": true
+			},
+			{
+				"label": "navigator",
+				"title": "Research",
+				"url": "/research",
+				"width": 1200,
+				"height": 800,
+				"visible": false,
+				"titleBarStyle": "Overlay",
+				"hiddenTitle": true,
+				"resizable": true,
+				"minimizable": true
 			}
 		],
 		"security": {
@@ -50,6 +62,7 @@
 	},
 	"bundle": {
 		"active": true,
+		"externalBin": ["binaries/dora-sidecar"],
 		"macOS": {
 			"entitlements": "Entitlements.plist",
 			"exceptionDomain": "",

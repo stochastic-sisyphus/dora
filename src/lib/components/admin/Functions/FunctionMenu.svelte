@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext } from 'svelte';
+		import { getContext } from 'svelte';
 
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
@@ -45,9 +44,7 @@
 			class="w-full max-w-[180px] rounded-xl px-1 py-1.5 border border-gray-300/30 dark:border-gray-700/50 z-50 bg-white dark:bg-gray-850 dark:text-white shadow"
 			sideOffset={-2}
 			side="bottom"
-			align="start"
-			transition={flyAndScale}
-		>
+			align="start"		>
 			{#if ['filter', 'action'].includes(func.type)}
 				<div
 					class="flex gap-2 justify-between items-center px-3 py-2 text-sm font-medium cursor-pointerrounded-md"
@@ -59,7 +56,12 @@
 					</div>
 
 					<div>
-						<Switch on:change={toggleGlobalHandler} bind:state={func.is_global} />
+						<Switch
+							on:change={(e) => {
+								toggleGlobalHandler(e);
+							}}
+							bind:state={func.is_global}
+						/>
 					</div>
 				</div>
 
@@ -68,7 +70,7 @@
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					editHandler();
 				}}
 			>
@@ -92,7 +94,7 @@
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					shareHandler();
 				}}
 			>
@@ -102,7 +104,7 @@
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					cloneHandler();
 				}}
 			>
@@ -113,7 +115,7 @@
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					exportHandler();
 				}}
 			>
@@ -126,7 +128,7 @@
 
 			<DropdownMenu.Item
 				class="flex  gap-2  items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
+				onSelect={() => {
 					deleteHandler();
 				}}
 			>

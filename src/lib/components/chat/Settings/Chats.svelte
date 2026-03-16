@@ -19,8 +19,6 @@
 
 	const i18n = getContext('i18n');
 
-	export let saveSettings: Function;
-
 	// Chats
 	let importFiles;
 
@@ -34,7 +32,7 @@
 
 		let reader = new FileReader();
 		reader.onload = (event) => {
-			let chats = JSON.parse(event.target.result);
+			let chats = JSON.parse(String(event.target?.result ?? ''));
 			console.log(chats);
 			if (getImportOrigin(chats) == 'openai') {
 				try {
@@ -179,6 +177,7 @@
 					<div class="flex space-x-1.5 items-center">
 						<button
 							class="hover:text-white transition"
+							aria-label={$i18n.t('Confirm archive all chats')}
 							on:click={() => {
 								archiveAllChatsHandler();
 								showArchiveConfirm = false;
@@ -199,6 +198,7 @@
 						</button>
 						<button
 							class="hover:text-white transition"
+							aria-label={$i18n.t('Cancel')}
 							on:click={() => {
 								showArchiveConfirm = false;
 							}}
@@ -264,11 +264,12 @@
 					</div>
 
 					<div class="flex space-x-1.5 items-center">
-						<button
-							class="hover:text-white transition"
-							on:click={() => {
-								deleteAllChatsHandler();
-								showDeleteConfirm = false;
+							<button
+								class="hover:text-white transition"
+								aria-label={$i18n.t('Confirm delete all chats')}
+								on:click={() => {
+									deleteAllChatsHandler();
+									showDeleteConfirm = false;
 							}}
 						>
 							<svg
@@ -284,11 +285,12 @@
 								/>
 							</svg>
 						</button>
-						<button
-							class="hover:text-white transition"
-							on:click={() => {
-								showDeleteConfirm = false;
-							}}
+							<button
+								class="hover:text-white transition"
+								aria-label={$i18n.t('Cancel')}
+								on:click={() => {
+									showDeleteConfirm = false;
+								}}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"

@@ -42,7 +42,7 @@
 					</div>
 				</div>
 			</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;

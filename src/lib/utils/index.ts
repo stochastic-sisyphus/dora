@@ -374,8 +374,8 @@ export const calculateSHA256 = async (file) => {
 	const reader = new FileReader();
 
 	// Define a promise to handle the file reading
-	const readFile = new Promise((resolve, reject) => {
-		reader.onload = () => resolve(reader.result);
+	const readFile = new Promise<ArrayBuffer>((resolve, reject) => {
+		reader.onload = () => resolve(reader.result as ArrayBuffer);
 		reader.onerror = reject;
 	});
 

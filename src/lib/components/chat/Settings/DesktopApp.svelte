@@ -1,13 +1,16 @@
 <script lang="ts">
+	import { probeCompatibleServer } from '$lib/apis';
+	import { APP_STORE_FILE } from '$lib/app/constants';
 	import { setShortcut } from '$lib/app/commands/set-shortcut';
 	import type { ChatBarPosition, ResetChatTime } from '$lib/app/state';
 	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
-	import { appConfig, WEBUI_BASE_URL } from '$lib/stores';
+	import { appConfig, COMPATIBLE_SERVER_URL } from '$lib/stores';
 	import { delay } from '$lib/utils';
 	import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 	import * as autoStart from '@tauri-apps/plugin-autostart';
 	import { isRegistered, unregister } from '@tauri-apps/plugin-global-shortcut';
+	import { getStore } from '@tauri-apps/plugin-store';
 	import type { i18n as i18nT } from 'i18next';
 	import { createEventDispatcher, getContext, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -71,16 +74,22 @@
 	let openLinksInApp: boolean;
 	const openLinksInAppChangeHandler = () => {};
 
+	let openrouterApiKey = '';
+	let searxngUrl = '';
+	let surrealdbUrl = '';
+	let compatibleServerUrl = '';
 	let showConfirmDialog = false;
 
-	const webUIBaseURLChangeHandler = async () => {
-		console.log('Changing webui base url');
+	const normalizeBaseUrl = (url: string) => url.trim().replace(/\/+$/, '');
+
+	const resetCompatibleServerUrl = async () => {
 		showConfirmDialog = true;
 	};
 
 	const handleConfirm = async () => {
 		await getCurrentWebviewWindow().clearAllBrowsingData();
-		$WEBUI_BASE_URL = '';
+		$COMPATIBLE_SERVER_URL = '';
+		$appConfig = { ...$appConfig, webuiBaseUrl: '' };
 		window.location.href = '/setup';
 	};
 
@@ -112,14 +121,47 @@
 			console.error('Failed to set launch at login to', launchAtLogin, e);
 		}
 
+		const normalizedCompatibleServerUrl = normalizeBaseUrl(compatibleServerUrl);
+		if (!normalizedCompatibleServerUrl) {
+			toast.error($i18n.t('Please enter a server URL.'));
+			return;
+		}
+
+		const serverChanged = normalizedCompatibleServerUrl !== $COMPATIBLE_SERVER_URL;
+		if (serverChanged) {
+			try {
+				await probeCompatibleServer(normalizedCompatibleServerUrl);
+			} catch (error) {
+				toast.error(error instanceof Error ? error.message : String(error));
+				return;
+			}
+		}
+
 		$appConfig = {
 			...$appConfig,
 			shortcut,
+			webuiBaseUrl: normalizedCompatibleServerUrl,
 			chatBarPositionPreference: positionOnScreen,
 			resetChatTimePreference: resetToNewChat,
 			openChatsInCompanion: openNewChatsInCompanion === 'true',
-			openLinksInApp
+			openLinksInApp,
+			substrate: { ...$appConfig.substrate, openrouterApiKey, searxngUrl, surrealdbUrl }
 		};
+		$COMPATIBLE_SERVER_URL = normalizedCompatibleServerUrl;
+
+		if (serverChanged) {
+			const store = await getStore(APP_STORE_FILE);
+			for (const key of (await store?.keys()) || []) {
+				if (!['app_config', 'compatible_server_url', 'theme'].includes(key)) {
+					await store?.delete(key);
+				}
+			}
+			await store?.save();
+			localStorage.removeItem('token');
+			await getCurrentWebviewWindow().clearAllBrowsingData();
+			window.location.href = '/';
+			return;
+		}
 
 		console.debug('After:', $appConfig);
 		dispatch('save');
@@ -132,6 +174,10 @@
 		openNewChatsInCompanion = $appConfig.openChatsInCompanion ? 'true' : 'false';
 		launchAtLogin = await autoStart.isEnabled();
 		openLinksInApp = $appConfig.openLinksInApp;
+		openrouterApiKey = $appConfig?.substrate?.openrouterApiKey ?? '';
+		searxngUrl = $appConfig?.substrate?.searxngUrl ?? '';
+		surrealdbUrl = $appConfig?.substrate?.surrealdbUrl ?? '';
+		compatibleServerUrl = $COMPATIBLE_SERVER_URL || $appConfig.webuiBaseUrl || '';
 	});
 </script>
 
@@ -202,7 +248,7 @@
 
 		<div class=" flex w-full justify-between">
 			<div class=" self-center text-xs font-medium">
-				{$i18n.t('Open Open WebUI Links in Desktop App')}
+				{$i18n.t('Open Compatible Server Links in Desktop App')}
 			</div>
 			<div class="flex items-center relative">
 				<div class="mt-1">
@@ -222,27 +268,103 @@
 					<Switch bind:state={launchAtLogin} on:change={launchAtLoginChangeHandler} />
 				</div>
 			</div>
+			
+			<!-- Legacy Search URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">Legacy Search URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://search.your-domain.com"
+					bind:value={searxngUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Legacy desktop-app search setting. New research flows use Sidecar Configuration.
+				</div>
+			</div>
+			
+			<!-- SurrealDB URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">SurrealDB URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://sync.your-domain.com"
+					bind:value={surrealdbUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Your SurrealDB instance URL for data synchronization
+				</div>
+			</div>
 		</div>
 
 		<hr class=" dark:border-gray-850 my-3" />
 
-		<div class="flex w-full justify-between">
-			<div class="self-center text-xs font-medium">{$i18n.t('Change WebUI Base URL')}</div>
-			<div class="flex items-center relative">
-				<div class="relative flex items-center">
-					<input
-						type="text"
-						readonly
-						value={$WEBUI_BASE_URL}
-						class="text-xs px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-850 dark:text-gray-200 focus:outline-none pr-24"
-					/>
-					<button
-						class="absolute right-1 flex text-xs items-center space-x-1 mr-1 px-3 py-1 rounded-lg bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 transition"
-						on:click={webUIBaseURLChangeHandler}
-					>
-						<div class="self-center font-medium line-clamp-1">{$i18n.t('Change')}</div>
-					</button>
+		<div class="">
+			<div class=" mb-1 text-sm font-medium">{$i18n.t('Substrate Settings')}</div>
+
+			<div>
+				<div class="text-sm font-medium mb-1">{$i18n.t('OpenRouter API Key')}</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="password"
+					placeholder="sk-or-..."
+					bind:value={openrouterApiKey}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					{$i18n.t('Used for structured extraction in the research panel.')}
 				</div>
+			</div>
+			
+			<!-- Legacy Search URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">Legacy Search URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://search.your-domain.com"
+					bind:value={searxngUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Legacy desktop-app search setting. New research flows use Sidecar Configuration.
+				</div>
+			</div>
+			
+			<!-- SurrealDB URL -->
+			<div class="mt-4">
+				<div class="text-sm font-medium mb-1">SurrealDB URL</div>
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://sync.your-domain.com"
+					bind:value={surrealdbUrl}
+				/>
+				<div class="text-xs text-gray-500 mt-1">
+					Your SurrealDB instance URL for data synchronization
+				</div>
+			</div>
+		</div>
+
+		<hr class=" dark:border-gray-850 my-3" />
+
+		<div>
+			<div class="mb-1 text-sm font-medium">Compatible Server URL</div>
+			<div class="flex items-center gap-2">
+				<input
+					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
+					type="url"
+					placeholder="https://your-server.example.com"
+					bind:value={compatibleServerUrl}
+				/>
+				<button
+					class="shrink-0 px-3 py-2 text-xs rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 transition"
+					on:click={resetCompatibleServerUrl}
+				>
+					Reset
+				</button>
+			</div>
+			<div class="text-xs text-gray-500 mt-1">
+				Change this to point Dora at a different Open WebUI server or compatible backend. Saving reloads the app against the new URL.
 			</div>
 		</div>
 	</div>
@@ -258,7 +380,7 @@
 
 <ConfirmDialog
 	bind:show={showConfirmDialog}
-	title="Change Open WebUI Base URL"
-	message="Are you sure you want to change the Open WebUI base URL?"
+	title="Change Compatible Server Base URL"
+	message="Are you sure you want to change the Compatible Server base URL?"
 	onConfirm={handleConfirm}
 />

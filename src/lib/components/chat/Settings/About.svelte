@@ -20,7 +20,7 @@
 
 	const checkForVersionUpdates = async () => {
 		updateAvailable = null;
-		version = await getVersionUpdates(localStorage.token).catch((error) => {
+		version = await getVersionUpdates().catch((error) => {
 			return {
 				current: WEBUI_VERSION,
 				latest: WEBUI_VERSION
@@ -58,16 +58,13 @@
 							v{WEBUI_VERSION}
 						</Tooltip>
 
-						<a
-							href="https://github.com/open-webui/open-webui/releases/tag/v{version.latest}"
-							target="_blank"
-						>
+						<span>
 							{updateAvailable === null
 								? $i18n.t('Checking for updates...')
 								: updateAvailable
 									? `(v${version.latest} ${$i18n.t('available!')})`
 									: $i18n.t('(latest)')}
-						</a>
+						</span>
 					</div>
 
 					<button
@@ -106,39 +103,8 @@
 
 		<hr class=" dark:border-gray-850" />
 
-		<div class="flex space-x-1">
-			<a href="https://discord.gg/5rJgQTnV4s" target="_blank">
-				<img
-					alt="Discord"
-					src="https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white"
-				/>
-			</a>
-
-			<a href="https://twitter.com/OpenWebUI" target="_blank">
-				<img
-					alt="X (formerly Twitter) Follow"
-					src="https://img.shields.io/twitter/follow/OpenWebUI"
-				/>
-			</a>
-
-			<a href="https://github.com/open-webui/open-webui" target="_blank">
-				<img
-					alt="Github Repo"
-					src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
-				/>
-			</a>
-		</div>
-
 		<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-			{#if !$WEBUI_NAME.includes('Open WebUI')}
-				<span class=" text-gray-500 dark:text-gray-300 font-medium">{$WEBUI_NAME}</span> -
-			{/if}
-			{$i18n.t('Created by')}
-			<a
-				class=" text-gray-500 dark:text-gray-300 font-medium"
-				href="https://github.com/tjbck"
-				target="_blank">Timothy J. Baek</a
-			>
+			Dora is a desktop shell for compatible servers and bundled sidecar workflows.
 		</div>
 	</div>
 </div>

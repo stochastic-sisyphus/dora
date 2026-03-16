@@ -145,7 +145,7 @@
 			<div class="flex justify-between items-center">
 				<div class="flex items-center md:self-center text-xl font-medium px-0.5">
 					{$i18n.t('Models')}
-					<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850" />
+					<div class="flex self-center w-[1px] h-6 mx-2.5 bg-gray-50 dark:bg-gray-850"></div>
 					<span class="text-lg font-medium text-gray-500 dark:text-gray-300"
 						>{filteredModels.length}</span
 					>
@@ -234,7 +234,7 @@
 							</div>
 						</button>
 						<div class="flex flex-row gap-0.5 items-center self-center">
-							<button
+							<button aria-label="Action"
 								class="self-center w-fit text-sm px-2 py-2 dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-xl"
 								type="button"
 								on:click={() => {
@@ -296,7 +296,7 @@
 
 							let reader = new FileReader();
 							reader.onload = async (event) => {
-								let savedModels = JSON.parse(event.target.result);
+								let savedModels = JSON.parse(String(event.target?.result ?? ''));
 								console.log(savedModels);
 
 								for (const model of savedModels) {

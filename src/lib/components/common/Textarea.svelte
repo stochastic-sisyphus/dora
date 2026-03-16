@@ -3,6 +3,8 @@
 
 	export let value = '';
 	export let placeholder = '';
+	export let rows: number | undefined = undefined;
+	export let required = false;
 	export let className =
 		'w-full rounded-lg px-3 py-2 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none resize-none h-full';
 
@@ -32,12 +34,15 @@
 <div
 	contenteditable="true"
 	bind:this={textareaElement}
+	role="textbox"
+	aria-multiline="true"
+	aria-required={required}
 	class="{className} whitespace-pre-wrap relative {value
 		? !value.trim()
 			? 'placeholder'
 			: ''
 		: 'placeholder'}"
-	style="field-sizing: content; -moz-user-select: text !important;"
+	style="field-sizing: content; -moz-user-select: text !important; min-height: {rows ? `${rows * 1.5}em` : 'auto'};"
 	on:input={() => {
 		const text = textareaElement.innerText;
 		if (text === '\n') {
@@ -48,8 +53,7 @@
 		value = text;
 	}}
 	on:paste={handlePaste}
-	data-placeholder={placeholder}
-/>
+	data-placeholder={placeholder}></div>
 
 <style>
 	.placeholder::before {
@@ -59,6 +63,7 @@
 		color: #adb5bd;
 		overflow: hidden;
 		display: -webkit-box;
+		line-clamp: 1;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 1;
 		pointer-events: none;

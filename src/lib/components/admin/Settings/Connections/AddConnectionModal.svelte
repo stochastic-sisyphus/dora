@@ -130,7 +130,7 @@
 					{$i18n.t('Add Connection')}
 				{/if}
 			</div>
-			<button
+			<button aria-label="Action"
 				class="self-center"
 				on:click={() => {
 					show = false;
@@ -176,7 +176,7 @@
 							</div>
 
 							<Tooltip content="Verify Connection" className="self-end -mb-1">
-								<button
+								<button aria-label="Verify Connection"
 									class="self-center p-1 bg-transparent hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-850 rounded-lg transition"
 									on:click={() => {
 										verifyHandler();
