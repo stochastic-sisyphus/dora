@@ -74,9 +74,6 @@
 	let openLinksInApp: boolean;
 	const openLinksInAppChangeHandler = () => {};
 
-	let openrouterApiKey = '';
-	let searxngUrl = '';
-	let surrealdbUrl = '';
 	let compatibleServerUrl = '';
 	let showConfirmDialog = false;
 
@@ -144,8 +141,7 @@
 			chatBarPositionPreference: positionOnScreen,
 			resetChatTimePreference: resetToNewChat,
 			openChatsInCompanion: openNewChatsInCompanion === 'true',
-			openLinksInApp,
-			substrate: { ...$appConfig.substrate, openrouterApiKey, searxngUrl, surrealdbUrl }
+			openLinksInApp
 		};
 		$COMPATIBLE_SERVER_URL = normalizedCompatibleServerUrl;
 
@@ -172,11 +168,13 @@
 		resetToNewChat = $appConfig.resetChatTimePreference;
 		keyboardShortcut = $appConfig.shortcut;
 		openNewChatsInCompanion = $appConfig.openChatsInCompanion ? 'true' : 'false';
-		launchAtLogin = await autoStart.isEnabled();
+		try {
+			launchAtLogin = await autoStart.isEnabled();
+		} catch (error) {
+			console.error('Failed to read launch-at-login state', error);
+			launchAtLogin = false;
+		}
 		openLinksInApp = $appConfig.openLinksInApp;
-		openrouterApiKey = $appConfig?.substrate?.openrouterApiKey ?? '';
-		searxngUrl = $appConfig?.substrate?.searxngUrl ?? '';
-		surrealdbUrl = $appConfig?.substrate?.surrealdbUrl ?? '';
 		compatibleServerUrl = $COMPATIBLE_SERVER_URL || $appConfig.webuiBaseUrl || '';
 	});
 </script>
@@ -266,81 +264,6 @@
 			<div class="flex items-center relative">
 				<div class="mt-1">
 					<Switch bind:state={launchAtLogin} on:change={launchAtLoginChangeHandler} />
-				</div>
-			</div>
-			
-			<!-- Legacy Search URL -->
-			<div class="mt-4">
-				<div class="text-sm font-medium mb-1">Legacy Search URL</div>
-				<input
-					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
-					type="url"
-					placeholder="https://search.your-domain.com"
-					bind:value={searxngUrl}
-				/>
-				<div class="text-xs text-gray-500 mt-1">
-					Legacy desktop-app search setting. New research flows use Sidecar Configuration.
-				</div>
-			</div>
-			
-			<!-- SurrealDB URL -->
-			<div class="mt-4">
-				<div class="text-sm font-medium mb-1">SurrealDB URL</div>
-				<input
-					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
-					type="url"
-					placeholder="https://sync.your-domain.com"
-					bind:value={surrealdbUrl}
-				/>
-				<div class="text-xs text-gray-500 mt-1">
-					Your SurrealDB instance URL for data synchronization
-				</div>
-			</div>
-		</div>
-
-		<hr class=" dark:border-gray-850 my-3" />
-
-		<div class="">
-			<div class=" mb-1 text-sm font-medium">{$i18n.t('Substrate Settings')}</div>
-
-			<div>
-				<div class="text-sm font-medium mb-1">{$i18n.t('OpenRouter API Key')}</div>
-				<input
-					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
-					type="password"
-					placeholder="sk-or-..."
-					bind:value={openrouterApiKey}
-				/>
-				<div class="text-xs text-gray-500 mt-1">
-					{$i18n.t('Used for structured extraction in the research panel.')}
-				</div>
-			</div>
-			
-			<!-- Legacy Search URL -->
-			<div class="mt-4">
-				<div class="text-sm font-medium mb-1">Legacy Search URL</div>
-				<input
-					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
-					type="url"
-					placeholder="https://search.your-domain.com"
-					bind:value={searxngUrl}
-				/>
-				<div class="text-xs text-gray-500 mt-1">
-					Legacy desktop-app search setting. New research flows use Sidecar Configuration.
-				</div>
-			</div>
-			
-			<!-- SurrealDB URL -->
-			<div class="mt-4">
-				<div class="text-sm font-medium mb-1">SurrealDB URL</div>
-				<input
-					class="w-full rounded-lg py-2 px-4 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-none"
-					type="url"
-					placeholder="https://sync.your-domain.com"
-					bind:value={surrealdbUrl}
-				/>
-				<div class="text-xs text-gray-500 mt-1">
-					Your SurrealDB instance URL for data synchronization
 				</div>
 			</div>
 		</div>
