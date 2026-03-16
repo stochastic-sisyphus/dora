@@ -364,7 +364,7 @@
 				</button>
 			</div>
 			<div class="text-xs text-gray-500 mt-1">
-				Change this to point Dora at a different compatible server. Saving reloads the app against the new URL.
+				Change this to point Dora at a different Open WebUI server or compatible backend. Saving reloads the app against the new URL.
 			</div>
 		</div>
 	</div>

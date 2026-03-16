@@ -122,7 +122,7 @@
 					}}
 				>
 					<div class="text-center text-gray-600 dark:text-gray-400 mb-4">
-						Please enter the base URL of your compatible server to get started
+						Enter the base URL of your Open WebUI server or another compatible server to get started
 					</div>
 
 					<div class="space-y-1">

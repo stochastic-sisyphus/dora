@@ -14,6 +14,7 @@
 	export let show = false;
 	export let role = '';
 	export let className = 'max-w-[240px]';
+	export let compatibilityMode = false;
 
 	const dispatch = createEventDispatcher<Record<string, any>>();
 </script>
@@ -70,7 +71,8 @@
 				<div class=" self-center truncate">{$i18n.t('Settings')}</div>
 			</button>
 
-			<button
+			{#if !compatibilityMode}
+				<button
 				class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
 				on:click={() => {
 					dispatch('show', 'archived-chat');
@@ -85,7 +87,8 @@
 					<ArchiveBox className="size-5" strokeWidth="1.5" />
 				</div>
 				<div class=" self-center truncate">{$i18n.t('Archived Chats')}</div>
-			</button>
+				</button>
+			{/if}
 
 			{#if role === 'admin'}
 				<a
@@ -151,7 +154,38 @@
 
 			<hr class=" border-gray-50 dark:border-gray-850 my-1 p-0" />
 
-			<button
+			{#if compatibilityMode}
+				<button
+					class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+					on:click={async () => {
+						showSettings.set(true);
+						show = false;
+
+						if ($mobile) {
+							showSidebar.set(false);
+						}
+					}}
+				>
+					<div class=" self-center mr-3">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="1.5"
+							stroke="currentColor"
+							class="w-5 h-5"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M15.75 19.5 8.25 12l7.5-7.5"
+							/>
+						</svg>
+					</div>
+					<div class=" self-center truncate">Change Server</div>
+				</button>
+			{:else}
+				<button
 				class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
 				on:click={async () => {
 					await userSignOut();
@@ -180,7 +214,8 @@
 					</svg>
 				</div>
 				<div class=" self-center truncate">{$i18n.t('Sign Out')}</div>
-			</button>
+				</button>
+			{/if}
 
 			{#if $activeUserCount}
 				<hr class=" border-gray-50 dark:border-gray-850 my-1 p-0" />

@@ -2,7 +2,7 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { getContext } from 'svelte';
 
-	import { showSettings } from '$lib/stores';
+	import { config, showSettings } from '$lib/stores';
 	
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
@@ -12,7 +12,7 @@
 
 export let showShortcutsHandler: Function;
 
-export let onClose: Function = () => {};
+	export let onClose: Function = () => {};
 </script>
 
 <Dropdown
@@ -34,7 +34,12 @@ export let onClose: Function = () => {};
 				class="flex gap-2 items-center px-3 py-2 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
 				id="chat-share-button"
 				onSelect={() => {
-					window.open('https://docs.openwebui.com', '_blank');
+					window.open(
+						$config?.compatibility_mode
+							? 'https://github.com/stochastic-sisyphus/dora#readme'
+							: 'https://docs.openwebui.com',
+						'_blank'
+					);
 				}}
 			>
 				<QuestionMarkCircle className="size-5" />

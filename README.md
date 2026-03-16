@@ -5,7 +5,7 @@ Desktop shell for chat, search, and browsing.
 ## What It Is
 
 - Tauri desktop app with three windows: main, chatbar, navigator
-- Works against a compatible chat server you point it at
+- Works against an Open WebUI server first, or another compatible chat server you point it at
 - Bundled Python sidecar handles local search, fetch, render, and extraction work
 - No core required for basic use
 
