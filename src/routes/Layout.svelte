@@ -5,7 +5,7 @@
 
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { getBackendConfig } from '$lib/apis';
+	import { detectAuthBootstrapServer, getBackendConfig } from '$lib/apis';
 	import { getSessionUser } from '$lib/apis/auths';
 	import reopenMainWindow from '$lib/app/actions/reopen-main-window';
 	import { CHATBAR_WINDOW_LABEL, MAIN_WINDOW_LABEL, OPEN_IN_MAIN_WINDOW } from '$lib/app/constants';
@@ -81,6 +81,20 @@
 				providers: {}
 			},
 			compatibility_mode: true
+		};
+	};
+
+	const createAuthBootstrapConfig = (baseUrl: string) => {
+		const compatibilityConfig = createCompatibilityConfig(baseUrl);
+
+		return {
+			...compatibilityConfig,
+			features: {
+				...compatibilityConfig.features,
+				auth: true,
+				enable_login_form: true
+			},
+			compatibility_mode: false
 		};
 	};
 
@@ -225,8 +239,13 @@
 				console.log('Backend config:', backendConfig);
 			} catch (error) {
 				console.error('Error loading backend config:', error);
-				compatibilityMode = true;
-				backendConfig = createCompatibilityConfig($WEBUI_BASE_URL);
+				const authBootstrapMode = await detectAuthBootstrapServer($WEBUI_BASE_URL);
+				if (authBootstrapMode) {
+					backendConfig = createAuthBootstrapConfig($WEBUI_BASE_URL);
+				} else {
+					compatibilityMode = true;
+					backendConfig = createCompatibilityConfig($WEBUI_BASE_URL);
+				}
 			}
 
 			initI18n();

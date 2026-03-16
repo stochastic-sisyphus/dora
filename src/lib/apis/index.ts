@@ -34,6 +34,41 @@ const deriveServerName = (baseUrl: string, explicitName?: string | null) => {
 	}
 };
 
+const probeAuthEndpoint = async (url: string) => {
+	try {
+		const response = await fetch(url, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			}
+		});
+
+		return response.ok || [400, 401, 403, 405, 422].includes(response.status);
+	} catch (error) {
+		console.error(error);
+		return false;
+	}
+};
+
+export const detectAuthBootstrapServer = async (baseUrl: string) => {
+	const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+	if (!normalizedBaseUrl) {
+		return false;
+	}
+
+	for (const endpoint of [
+		`${normalizedBaseUrl}/api/auths/signup/enabled`,
+		`${normalizedBaseUrl}/api/auths/signin`
+	]) {
+		if (await probeAuthEndpoint(endpoint)) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
 const normalizeCompatibleModels = (payload: any, discoveredBaseUrl: string) => {
 	const rawModels = Array.isArray(payload)
 		? payload
@@ -115,9 +150,23 @@ export const probeCompatibleServer = async (baseUrl: string, token: string = '')
 	}
 
 	if (!config && models.length === 0) {
-		throw new Error(
-			'Could not read backend configuration or models from that server URL.'
-		);
+		const authRequired = await detectAuthBootstrapServer(normalizedBaseUrl);
+		if (!authRequired) {
+			throw new Error(
+				'Could not read backend configuration or models from that server URL.'
+			);
+		}
+
+		return {
+			baseUrl: normalizedBaseUrl,
+			name: deriveServerName(normalizedBaseUrl),
+			config,
+			models,
+			modelCount: 0,
+			compatibilityMode: false,
+			authRequired: true,
+			openAIBaseUrl: discoveredOpenAIBaseUrl
+		};
 	}
 
 	return {
@@ -127,6 +176,7 @@ export const probeCompatibleServer = async (baseUrl: string, token: string = '')
 		models,
 		modelCount: models.length,
 		compatibilityMode: !config,
+		authRequired: false,
 		openAIBaseUrl: discoveredOpenAIBaseUrl
 	};
 };

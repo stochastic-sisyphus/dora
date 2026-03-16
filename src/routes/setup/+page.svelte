@@ -22,6 +22,7 @@
 				name: string;
 				modelCount: number;
 				compatibilityMode: boolean;
+				authRequired: boolean;
 		  } = null;
 
 	const normalizeBaseUrl = (url: string) => url.trim().replace(/\/+$/, '');
@@ -50,13 +51,21 @@
 		probeResult = {
 			name: serverProfile.name,
 			modelCount: serverProfile.modelCount,
-			compatibilityMode: serverProfile.compatibilityMode
+			compatibilityMode: serverProfile.compatibilityMode,
+			authRequired: Boolean(serverProfile.authRequired)
 		};
 		$WEBUI_NAME = serverProfile.name;
 		$config = serverProfile.config ?? $config;
 		$models = serverProfile.models;
 		$WEBUI_BASE_URL = normalizedBaseUrl;
 		$appConfig = { ...$appConfig, webuiBaseUrl: normalizedBaseUrl };
+
+		if (serverProfile.authRequired) {
+			probing = false;
+			window.location.href = '/auth';
+			return;
+		}
+
 		probing = false;
 	};
 
@@ -152,11 +161,21 @@
 								{probeResult.name}
 							</div>
 							<div class="mt-1 text-xs text-gray-600 dark:text-gray-400">
-								{probeResult.compatibilityMode ? 'Compatible API detected' : 'Backend API detected'}
+								{probeResult.authRequired
+									? 'Open WebUI auth detected'
+									: probeResult.compatibilityMode
+										? 'Compatible API detected'
+										: 'Backend API detected'}
 							</div>
-							<div class="mt-1 text-xs text-gray-600 dark:text-gray-400">
-								{probeResult.modelCount} model{probeResult.modelCount === 1 ? '' : 's'} discovered
-							</div>
+							{#if probeResult.authRequired}
+								<div class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+									Sign in first. Dora will discover models after authentication.
+								</div>
+							{:else}
+								<div class="mt-1 text-xs text-gray-600 dark:text-gray-400">
+									{probeResult.modelCount} model{probeResult.modelCount === 1 ? '' : 's'} discovered
+								</div>
+							{/if}
 						</div>
 					{/if}
 
