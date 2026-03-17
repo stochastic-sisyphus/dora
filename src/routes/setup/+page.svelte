@@ -132,6 +132,9 @@
 				>
 					<div class="text-center text-gray-600 dark:text-gray-400 mb-4">
 						Enter the base URL of your Open WebUI server or another compatible server to get started
+						<div class="mt-1 text-xs text-gray-500 dark:text-gray-500">
+							Use the server root URL, for example <code>http://localhost:3000</code>, not a docs page or a specific model endpoint.
+						</div>
 					</div>
 
 					<div class="space-y-1">

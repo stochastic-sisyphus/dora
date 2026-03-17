@@ -3,6 +3,64 @@ import { COMPATIBLE_SERVER_URL } from '$lib/stores';
 
 const normalizeBaseUrl = (baseUrl: string) => baseUrl.trim().replace(/\/+$/, '');
 
+type ProbeFailure = {
+	url: string;
+	status?: number;
+	message: string;
+};
+
+const readErrorBody = async (response: Response) => {
+	try {
+		return await response.json();
+	} catch {
+		try {
+			return await response.text();
+		} catch {
+			return null;
+		}
+	}
+};
+
+const compactText = (value: string, maxLength: number = 120) => {
+	const normalized = value.replace(/\s+/g, ' ').trim();
+	if (normalized.length <= maxLength) {
+		return normalized;
+	}
+
+	return `${normalized.slice(0, maxLength - 1)}...`;
+};
+
+const describeProbeError = (error: unknown) => {
+	if (typeof error === 'string') {
+		return compactText(error);
+	}
+
+	if (error instanceof Error) {
+		return compactText(error.message || 'Request failed.');
+	}
+
+	if (error && typeof error === 'object') {
+		const detail =
+			typeof (error as { detail?: unknown }).detail === 'string'
+				? (error as { detail: string }).detail
+				: typeof (error as { message?: unknown }).message === 'string'
+					? (error as { message: string }).message
+					: null;
+
+		if (detail) {
+			return compactText(detail);
+		}
+
+		try {
+			return compactText(JSON.stringify(error));
+		} catch {
+			return 'Request failed.';
+		}
+	}
+
+	return 'Request failed.';
+};
+
 const getJson = async (url: string, headers: Record<string, string>) => {
 	const response = await fetch(url, {
 		method: 'GET',
@@ -10,16 +68,88 @@ const getJson = async (url: string, headers: Record<string, string>) => {
 	});
 
 	if (!response.ok) {
-		let errorBody: unknown = null;
-		try {
-			errorBody = await response.json();
-		} catch {
-			errorBody = await response.text();
-		}
-		throw errorBody;
+		throw await readErrorBody(response);
 	}
 
 	return response.json();
+};
+
+const getJsonForProbe = async (
+	url: string,
+	headers: Record<string, string>,
+	failures: ProbeFailure[]
+) => {
+	try {
+		const response = await fetch(url, {
+			method: 'GET',
+			headers
+		});
+
+		if (!response.ok) {
+			const errorBody = await readErrorBody(response);
+			failures.push({
+				url,
+				status: response.status,
+				message: describeProbeError(errorBody)
+			});
+			console.error(errorBody);
+			return null;
+		}
+
+		try {
+			return await response.json();
+		} catch (error) {
+			console.error(error);
+			failures.push({
+				url,
+				status: response.status,
+				message: 'Response was not valid JSON.'
+			});
+			return null;
+		}
+	} catch (error) {
+		console.error(error);
+		failures.push({
+			url,
+			message: describeProbeError(error)
+		});
+		return null;
+	}
+};
+
+const buildProbeFailureMessage = (baseUrl: string, failures: ProbeFailure[]) => {
+	const endpoints = failures.map(({ url }) => {
+		try {
+			return new URL(url).pathname;
+		} catch {
+			return url.replace(baseUrl, '') || url;
+		}
+	});
+
+	const formattedChecks = endpoints.join(', ');
+	const firstFailure = failures[0];
+
+	if (failures.some(({ status }) => status === 401 || status === 403)) {
+		return `The server responded, but Dora was not allowed to read its config or models. Checked ${formattedChecks}. If this backend requires a token before exposing those endpoints, this URL alone is not enough.`;
+	}
+
+	if (failures.length > 0 && failures.every(({ status }) => status === 404)) {
+		return `The server is reachable, but it does not expose Dora's expected endpoints at this base URL. Checked ${formattedChecks}. Use the server root URL, not a docs page or model-specific endpoint.`;
+	}
+
+	if (failures.every(({ status }) => status == null)) {
+		const isTauriOrigin =
+			typeof window !== 'undefined' &&
+			(window.location.protocol === 'tauri:' || window.location.hostname === 'tauri.localhost');
+
+		if (isTauriOrigin) {
+			return `Dora could not reach ${baseUrl} from the desktop app. If this is an Open WebUI server and the URL is correct, the likely issue is CORS for the Tauri app origin. In Open WebUI, allow Dora's origin in CORS_ALLOW_ORIGIN and add tauri to CORS_ALLOW_CUSTOM_SCHEME.`;
+		}
+
+		return `Dora could not reach ${baseUrl}. Check the protocol, host, port, and whether the server is running.`;
+	}
+
+	return `Could not read backend configuration or models from that server URL. Checked ${formattedChecks}. First failure: ${firstFailure ? `${firstFailure.message}${firstFailure.status ? ` (HTTP ${firstFailure.status})` : ''}.` : 'request failed.'}`;
 };
 
 const deriveServerName = (baseUrl: string, explicitName?: string | null) => {
@@ -111,40 +241,36 @@ export const probeCompatibleServer = async (baseUrl: string, token: string = '')
 		'Content-Type': 'application/json',
 		...(token && { authorization: `Bearer ${token}` })
 	};
+	const probeFailures: ProbeFailure[] = [];
 
-	let config = null;
-	try {
-		config = await getJson(`${normalizedBaseUrl}/api/config`, {
+	const config = await getJsonForProbe(
+		`${normalizedBaseUrl}/api/config`,
+		{
 			'Content-Type': 'application/json'
-		});
-	} catch (error) {
-		console.error(error);
-	}
+		},
+		probeFailures
+	);
 
 	let models = [];
 	let discoveredOpenAIBaseUrl = `${normalizedBaseUrl}/v1`;
 
-	try {
-		const res = await getJson(`${normalizedBaseUrl}/api/models`, headers);
-		models = res?.data ?? [];
-	} catch (error) {
-		console.error(error);
-	}
+	const backendModels = await getJsonForProbe(`${normalizedBaseUrl}/api/models`, headers, probeFailures);
+	models = backendModels?.data ?? [];
 
 	if (!models.length) {
 		const compatibilityEndpoints = [`${normalizedBaseUrl}/v1/models`, `${normalizedBaseUrl}/models`];
 
 		for (const modelsUrl of compatibilityEndpoints) {
-			try {
-				const res = await getJson(modelsUrl, headers);
-				discoveredOpenAIBaseUrl = modelsUrl.replace(/\/models$/, '');
-				models = normalizeCompatibleModels(res, discoveredOpenAIBaseUrl);
+			const res = await getJsonForProbe(modelsUrl, headers, probeFailures);
+			if (!res) {
+				continue;
+			}
 
-				if (models.length > 0) {
-					break;
-				}
-			} catch (error) {
-				console.error(error);
+			discoveredOpenAIBaseUrl = modelsUrl.replace(/\/models$/, '');
+			models = normalizeCompatibleModels(res, discoveredOpenAIBaseUrl);
+
+			if (models.length > 0) {
+				break;
 			}
 		}
 	}
@@ -152,9 +278,7 @@ export const probeCompatibleServer = async (baseUrl: string, token: string = '')
 	if (!config && models.length === 0) {
 		const authRequired = await detectAuthBootstrapServer(normalizedBaseUrl);
 		if (!authRequired) {
-			throw new Error(
-				'Could not read backend configuration or models from that server URL.'
-			);
+			throw new Error(buildProbeFailureMessage(normalizedBaseUrl, probeFailures));
 		}
 
 		return {
